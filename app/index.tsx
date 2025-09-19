@@ -6,13 +6,13 @@ import { Audio, } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 type ProcessedResult = {
@@ -44,13 +44,16 @@ const ExpoPronunciationApp = () => {
   // Azure Speech Service Configuration
   const AZURE_SPEECH_KEY = '5R5LOhC456Vc4inIg3GSEkwXh6xnUt7aLJ8rcaGny1kfuBXc0Yq7JQQJ99BIACYeBjFXJ3w3AAAYACOGCbMh'; // Replace with your key
   const AZURE_REGION = 'eastus'; // e.g., 'eastus'
-  const AZURE_ENDPOINT = `https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=detailed
-`;
+  //const AZURE_ENDPOINT = `https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=detailed`;
+  const AZURE_ENDPOINT = `https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1`;
+  const url = `${AZURE_ENDPOINT}?language=en-US&format=detailed&profanity=raw`;
+
+  //const AZURE_ENDPOINT = `https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-PH&format=detailed`;
   //const AZURE_ENDPOINT = `https://eastus.api.cognitive.microsoft.com/`
   //const AZURE_ENDPOINT = `https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1`;
 
   // Reference text for pronunciation assessment
-  const REFERENCE_TEXT = "Hello world, how are you today?";
+  const REFERENCE_TEXT = "All will be good as time goes by.";
 
   // Request audio permissions
   useEffect(() => {
@@ -193,7 +196,7 @@ const getAudioBytes = async (uri: string): Promise<Uint8Array> => {
       // Azure API headers
       const headers = {
         'Ocp-Apim-Subscription-Key': AZURE_SPEECH_KEY,
-        'Content-Type': 'audio/m4a',
+        'Content-Type': 'audio/mp4',
         'Accept': 'application/json',
         'Pronunciation-Assessment': btoa(JSON.stringify(pronunciationConfig)),
       };
@@ -227,28 +230,28 @@ const getAudioBytes = async (uri: string): Promise<Uint8Array> => {
   };
 
   // Process pronunciation assessment results
-  const processPronunciationResult = (result : any) => {
+  const processPronunciationResult = (result: any) => {
     if (result.NBest && result.NBest.length > 0) {
       const bestResult = result.NBest[0];
-      const pronunciationAssessment = bestResult.PronunciationAssessment;
-      
+
       const processedResult = {
-        accuracyScore: Math.round(pronunciationAssessment?.AccuracyScore || 0),
-        fluencyScore: Math.round(pronunciationAssessment?.FluencyScore || 0),
-        completenessScore: Math.round(pronunciationAssessment?.CompletenessScore || 0),
-        pronunciationScore: Math.round(pronunciationAssessment?.PronScore || 0),
+        accuracyScore: Math.round(bestResult.AccuracyScore || 0),
+        fluencyScore: Math.round(bestResult.FluencyScore || 0),
+        completenessScore: Math.round(bestResult.CompletenessScore || 0),
+        pronunciationScore: Math.round(bestResult.PronScore || 0),
         recognizedText: bestResult.Display || '',
-        words: bestResult.Words?.map((word : any) => ({
+        words: bestResult.Words?.map((word: any) => ({
           word: word.Word,
-          accuracyScore: Math.round(word.PronunciationAssessment?.AccuracyScore || 0),
-          errorType: word.PronunciationAssessment?.ErrorType || 'None',
-          phonemes: word.Phonemes?.map((phoneme : any) => ({
+          accuracyScore: Math.round(word.AccuracyScore || 0),
+          errorType: word.ErrorType || 'None',
+          phonemes: word.Phonemes?.map((phoneme: any) => ({
             phoneme: phoneme.Phoneme,
-            accuracyScore: Math.round(phoneme.PronunciationAssessment?.AccuracyScore || 0)
+            accuracyScore: Math.round(phoneme.AccuracyScore || 0)
           })) || []
         })) || []
       };
 
+      console.log("Processed Result:", processedResult);
       setPronunciationResult(processedResult);
       determineReaderLevel(processedResult.pronunciationScore);
     } else {
