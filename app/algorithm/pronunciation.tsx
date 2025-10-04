@@ -1,6 +1,4 @@
-// Expo-Compatible Pronunciation Assessment App
-// Install: npx expo install expo-av expo-media-library expo-file-system expo-speech
-
+import { Picker } from '@react-native-picker/picker';
 import { decode as atob, encode as btoa } from 'base-64';
 import { Audio, } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -14,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { referenceTexts } from './referenceTexts';
 
 type ProcessedResult = {
   accuracyScore: number;
@@ -40,6 +39,7 @@ const ExpoPronunciationApp = () => {
   const [pronunciationResult, setPronunciationResult] = useState<ProcessedResult | null>(null);
   const [readerLevel, setReaderLevel] = useState('');
   const [permissionResponse, requestPermission] = Audio.usePermissions();
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Azure Speech Service Configuration
   const AZURE_SPEECH_KEY = '5R5LOhC456Vc4inIg3GSEkwXh6xnUt7aLJ8rcaGny1kfuBXc0Yq7JQQJ99BIACYeBjFXJ3w3AAAYACOGCbMh'; // Replace with your key
@@ -48,12 +48,8 @@ const ExpoPronunciationApp = () => {
   const AZURE_ENDPOINT = `https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1`;
   const url = `${AZURE_ENDPOINT}?language=en-US&format=detailed&profanity=raw`;
 
-  //const AZURE_ENDPOINT = `https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-PH&format=detailed`;
-  //const AZURE_ENDPOINT = `https://eastus.api.cognitive.microsoft.com/`
-  //const AZURE_ENDPOINT = `https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1`;
-
   // Reference text for pronunciation assessment
-  const REFERENCE_TEXT = "All will be good as time goes by.";
+  const REFERENCE_TEXT = referenceTexts[selectedIndex].text;
 
   // Request audio permissions
   useEffect(() => {
@@ -307,7 +303,23 @@ const getAudioBytes = async (uri: string): Promise<Uint8Array> => {
         <Text style={styles.subtitle}>Read the text below clearly:</Text>
       </View>
 
+      {/* ✅ NEW: Passage Picker */}
+      <View style={{ marginHorizontal: 20, marginTop: 10 }}>
+        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>
+          Select Passage:
+        </Text>
+        <Picker
+          selectedValue={selectedIndex}
+          onValueChange={(itemValue) => setSelectedIndex(itemValue)}
+        >
+          {referenceTexts.map((item, idx) => (
+            <Picker.Item key={idx} label={item.title} value={idx} />
+          ))}
+      </Picker>
+      </View>
+
       <View style={styles.textContainer}>
+        {/* ✅ This now shows whichever passage is selected */}
         <Text style={styles.referenceText}>{REFERENCE_TEXT}</Text>
       </View>
 
