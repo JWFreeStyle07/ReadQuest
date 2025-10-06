@@ -140,6 +140,16 @@ const Login = () => {
           >
             <Text style={styles.loginText}>I ALREADY HAVE AN ACCOUNT</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.getStartedBtn}
+            onPress={() => router.push({
+  pathname: "/vocabSupport/vocabSupport",
+  params: { title: "Counting the Hours" }, // 👈 must match your referenceTexts title exactly
+})}
+          >
+            <Text style={styles.getStartedText}>TEST VOCAB</Text>
+          </TouchableOpacity>
         </LinearGradient>
       </View>
 

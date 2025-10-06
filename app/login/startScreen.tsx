@@ -2,14 +2,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");
@@ -55,7 +55,7 @@ const Login = () => {
         {/* Image Section */}
           {/* Leaves Overlay */}
           <Animated.Image
-            source={require("../assets/images/login/leafLeft.png")}
+            source={require("../../assets/images/login/leafLeft.png")}
             style={[
               styles.leafLeft,
               {
@@ -73,7 +73,7 @@ const Login = () => {
             resizeMode="contain"
           />
           <Animated.Image
-            source={require("../assets/images/login/leafRight.png")}
+            source={require("../../assets/images/login/leafRight.png")}
             style={[
               styles.leafRight,
               {
@@ -92,7 +92,7 @@ const Login = () => {
           />
         <View style={styles.imageContainer}>
           <Image
-            source={require("../assets/images/login/readBoy.jpg")}
+            source={require("../../assets/images/login/readBoy.jpg")}
             style={styles.image}
             resizeMode="cover"
           />
