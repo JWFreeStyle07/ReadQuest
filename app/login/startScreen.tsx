@@ -92,7 +92,7 @@ const Login = () => {
           />
         <View style={styles.imageContainer}>
           <Image
-            source={require("../../assets/images/login/readBoy.jpg")}
+            source={require("../../assets/images/login/readBoy.png")}
             style={styles.image}
             resizeMode="cover"
           />
