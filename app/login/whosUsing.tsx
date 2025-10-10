@@ -3,12 +3,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
-    Dimensions,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");
@@ -30,27 +30,32 @@ const SecondScreen = () => {
         <MaterialCommunityIcons name="arrow-left" size={width * 0.08} color="#ffffffff" />
       </TouchableOpacity>
 
-      {/* Speech Bubble */}
-      <View style={styles.speechBubbleContainer}>
-        <View style={styles.speechBubble}>
-          <Text style={styles.speechBubbleText}>
-            Who's using{"\n"}ReadQuest?
-          </Text>
-        </View>
-        {/* Speech Bubble Tail */}
-        <View style={styles.speechBubbleTail} />
+      {/* Speech Bubble Image - Replace with your own image */}
+      <View style={styles.speechBubbleImageContainer}>
+        <Image
+          source={require("../../assets/images/login/comicBubble.png")}
+          style={styles.speechBubbleImage}
+          resizeMode="contain"
+        />
+        <Text style={styles.speechBubbleText}>
+          Who's using{"\n"}ReadQuest?
+        </Text>
       </View>
 
-      {/* Oval behind image */}
-      <View style={styles.ovalContainer}>
-        <View style={styles.oval} />
-      </View>
-
-      {/* Image */}
+      {/* Bird Image */}
       <View style={styles.imageContainer}>
         <Image
           source={require("../../assets/images/login/birdMagnifier.png")}
           style={styles.image}
+          resizeMode="contain"
+        />
+      </View>
+
+      {/* Oval Image - Replace with your own image */}
+      <View style={styles.ovalImageContainer}>
+        <Image
+          source={require("../../assets/images/login/oval.png")}
+          style={styles.ovalImage}
           resizeMode="contain"
         />
       </View>
@@ -63,6 +68,7 @@ const SecondScreen = () => {
           onPress={() => {
             // Handle student selection
             console.log("Student selected");
+            router.push("../../login/enterPhone");
           }}
         >
           <LinearGradient
@@ -81,6 +87,7 @@ const SecondScreen = () => {
           onPress={() => {
             // Handle teacher selection
             console.log("Teacher selected");
+            router.push("../../login/enterPhone");
           }}
         >
           <LinearGradient
@@ -110,60 +117,45 @@ const styles = StyleSheet.create({
     zIndex: 10,
     padding: width * 0.02,
   },
-  speechBubbleContainer: {
+  speechBubbleImageContainer: {
     position: "absolute",
-    top: height * 0.22,
-    left: width * 0.5,
-    transform: [{ translateX: -width * 0.143 }],
+    top: height * 0.18,
+    left: 0,
+    right: 0,
     alignItems: "center",
-  },
-  speechBubble: {
-    width: width * 0.286,
-    height: height * 0.133,
-    borderWidth: 2,
-    borderColor: "#94D231",
-    borderRadius: 20,
+    height: height * 0.25,
+    zIndex: 2,
     justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "transparent",
   },
-  speechBubbleTail: {
+  speechBubbleImage: {
     position: "absolute",
-    bottom: -height * 0.025,
-    left: width * 0.04,
-    width: 0,
-    height: 0,
-    backgroundColor: "transparent",
-    borderStyle: "solid",
-    borderLeftWidth: width * 0.03,
-    borderRightWidth: width * 0.03,
-    borderTopWidth: height * 0.04,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderTopColor: "#94D231",
+    width: width * 0.8,
+    height: "60%",
+    zIndex: 1,
   },
   speechBubbleText: {
     fontFamily: "Poppins",
     fontWeight: "800",
     fontSize: width * 0.034,
     lineHeight: width * 0.054,
+    top: height * -0.01,
     textAlign: "center",
     color: "#ffffffff",
-    paddingHorizontal: width * 0.02,
+    paddingHorizontal: width * 0.03,
+    zIndex: 2,
   },
-  ovalContainer: {
+  ovalImageContainer: {
     position: "absolute",
-    top: height * 0.51,
+    top: height * 0.48,
     left: 0,
     right: 0,
     alignItems: "center",
+    height: height * 0.1,
     zIndex: 0,
   },
-  oval: {
-    width: width * 0.3,
-    height: height * 0.03,
-    backgroundColor: "#f6c856",
-    borderRadius: width * 0.1,
+  ovalImage: {
+    width: width * 0.5,
+    height: "100%",
   },
   imageContainer: {
     position: "absolute",
@@ -194,7 +186,7 @@ const styles = StyleSheet.create({
       width: -4,
       height: 0,
     },
-    shadowOpacity: 1,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 8,
   },

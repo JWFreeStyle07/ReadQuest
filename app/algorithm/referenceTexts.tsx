@@ -3,8 +3,7 @@
 export const referenceTexts = [
     {
         title: `For Testing Only`,
-        text: `All will be good as time goes by. And you can pass this.`
-    },
+        text: `All will be good as time goes by. And you can pass this.`},
     {
         title: `Telling Time`,
         text: `Humans have used different objects to tell time. In the beginning, they used an hourglass. This is a cylindrical glass with a narrow center which allows sand to flow from its upper to its lower portion. Once all the sand has trickled to the lower portion, one knows that an hour has passed. Using the same idea, water clocks were constructed to measure time by having water flow through a narrow passage from one container to another. On the other hand, sundials allowed people to estimate an hour by looking at the position of the shadow cast by the sun on a plate. At night, people measured time by checking the alignment of the stars in the sky. None of these were accurate, though. The clock was the first accurate instrument for telling time`},
