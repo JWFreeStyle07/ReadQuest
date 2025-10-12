@@ -5,15 +5,15 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { PhoneAuthProvider, signInWithCredential } from "firebase/auth";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-    Dimensions,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { auth } from "../../firebase/firebaseConfig";
 
@@ -107,7 +107,7 @@ const VerificationScreen = () => {
         }).start(() => {
           // Navigate to next screen after animation
           setTimeout(() => {
-            router.push("/login/loginScreen"); // Change to your actual next screen
+            router.push("/login/signinScreen"); // Change to your actual next screen
           }, 1000);
         });
       });

@@ -1,69 +1,29 @@
-// import React, { useState } from "react";
-// import { Button, Text, TextInput, View } from "react-native";
-// import { login, signUp } from "../../firebase/authService";
-
-// export default function LoginScreen() {
-//   const [email, setEmail] = useState("");
-//   const [pw, setPw] = useState("");
-//   const [name, setName] = useState("");
-//   const [grade, setGrade] = useState("");
-//   const [isSignUp, setIsSignUp] = useState(false);
-
-//   async function handleSubmit() {
-//     try {
-//       if (isSignUp) {
-//         await signUp(email, pw, name, grade);
-//       } else {
-//         await login(email, pw);
-//       }
-//     } catch (err: any) {
-//       alert(err.message);
-//     }
-//   }
-
-//   return (
-//     <View>
-//       {isSignUp && (
-//         <>
-//           <TextInput placeholder="Name" value={name} onChangeText={setName} />
-//           <TextInput placeholder="Grade Level" value={grade} onChangeText={setGrade} />
-//         </>
-//       )}
-//       <TextInput placeholder="Email" value={email} onChangeText={setEmail} />
-//       <TextInput placeholder="Password" secureTextEntry value={pw} onChangeText={setPw} />
-//       <Button title={isSignUp ? "Sign Up" : "Login"} onPress={handleSubmit} />
-//       <Text onPress={() => setIsSignUp(!isSignUp)}>
-//         {isSignUp ? "Already have an account? Login" : "Don't have an account? Sign Up"}
-//       </Text>
-//     </View>
-//   );
-// }
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import React, { useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Dimensions,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Animated,
+    Dimensions,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { auth, db } from "../../firebase/firebaseConfig";
 
 const { width, height } = Dimensions.get("window");
 
-const LoginScreen = () => {
+const SigninScreen = () => {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -75,6 +35,56 @@ const LoginScreen = () => {
   const successScale = useRef(new Animated.Value(0)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
   const checkmarkScale = useRef(new Animated.Value(0)).current;
+
+  const validateUsername = (name: string): boolean => {
+    // Check length (5-20 characters including space)
+    if (name.length < 5 || name.length > 20) {
+      Alert.alert("Invalid Username", "Username must be between 5-20 characters long.");
+      return false;
+    }
+
+    // Check for exactly one space
+    const spaceCount = (name.match(/ /g) || []).length;
+    if (spaceCount !== 1) {
+      Alert.alert("Invalid Username", "Username must contain exactly one space separating first and last name.");
+      return false;
+    }
+
+    // Check for only alphabets and one space
+    const nameRegex = /^[A-Za-z]+ [A-Za-z]+$/;
+    if (!nameRegex.test(name)) {
+      Alert.alert("Invalid Username", "Username must contain only alphabets and one space (no numbers or special characters).");
+      return false;
+    }
+
+    // Check that both first and last name are not empty
+    const parts = name.split(" ");
+    if (parts[0].length === 0 || parts[1].length === 0) {
+      Alert.alert("Invalid Username", "Both first name and last name are required.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const validatePassword = (pass: string): boolean => {
+    // Check length (5-20 characters)
+    if (pass.length < 5 || pass.length > 20) {
+      Alert.alert("Invalid Password", "Password must be between 5-20 characters long.");
+      return false;
+    }
+
+    // Check for at least one letter and one number
+    const hasLetter = /[A-Za-z]/.test(pass);
+    const hasNumber = /[0-9]/.test(pass);
+
+    if (!hasLetter || !hasNumber) {
+      Alert.alert("Invalid Password", "Password must contain both letters and numbers.");
+      return false;
+    }
+
+    return true;
+  };
 
   const showSuccessAnimation = (callback: () => void) => {
     setShowSuccess(true);
@@ -102,55 +112,46 @@ const LoginScreen = () => {
     });
   };
 
-  const handleLogin = async () => {
-    if (!username.trim()) {
-      Alert.alert("Missing Information", "Please enter your username.");
-      return;
-    }
-
-    if (!password.trim()) {
-      Alert.alert("Missing Information", "Please enter your password.");
-      return;
-    }
+  const handleSignIn = async () => {
+    if (!validateUsername(username)) return;
+    if (!validatePassword(password)) return;
 
     setLoading(true);
 
     try {
-      // Convert username to email format (same as sign in)
+      // Create a temporary email from username (since Firebase requires email)
       const email = `${username.replace(" ", "").toLowerCase()}@readquest.app`;
 
-      // Sign in with Firebase Auth
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // Create user with Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Verify user profile exists in Firestore
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-
-      if (!userDoc.exists()) {
-        Alert.alert("Error", "User profile not found. Please sign in first.");
-        setLoading(false);
-        return;
-      }
+      // Store user profile in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        username: username,
+        email: email,
+        createdAt: new Date().toISOString(),
+        scores: [],
+        readerType: "Beginner",
+      });
 
       setLoading(false);
 
       // Show success animation
       showSuccessAnimation(() => {
-        router.push("../../login/introductionScreen"); // Change to your actual introductory screen path
+        router.push("/login/loginScreen");
       });
 
     } catch (error: any) {
       setLoading(false);
       
-      if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
-        Alert.alert("Login Failed", "Invalid username or password. Please try again.");
-      } else if (error.code === "auth/too-many-requests") {
-        Alert.alert("Too Many Attempts", "Too many failed login attempts. Please try again later.");
+      if (error.code === "auth/email-already-in-use") {
+        Alert.alert("Account Exists", "This username is already taken. Please choose a different one.");
       } else {
-        Alert.alert("Login Failed", error.message || "An error occurred. Please try again.");
+        Alert.alert("Sign In Failed", error.message || "An error occurred. Please try again.");
       }
       
-      console.error("Login Error:", error);
+      console.error("Sign In Error:", error);
     }
   };
 
@@ -160,16 +161,16 @@ const LoginScreen = () => {
       locations={[0.1538, 0.5913]}
       style={styles.container}
     >
-      <KeyboardAvoidingView
+    <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "padding"}
         style={styles.container}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -height * 0.2}
-      >
+    >
         <ScrollView 
-          contentContainerStyle={styles.scrollContent} 
-          bounces={false}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent} 
+            bounces={false}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
         >
           {/* Back Arrow */}
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -215,7 +216,7 @@ const LoginScreen = () => {
                   },
                 ]}
               >
-                Login Successful!
+                Sign In Successful!
               </Animated.Text>
             </View>
           )}
@@ -280,16 +281,16 @@ const LoginScreen = () => {
             </View>
           </View>
 
-          {/* Log In Button */}
+          {/* Sign In Button */}
           <TouchableOpacity
-            style={[styles.loginButton, (loading || showSuccess) && styles.loginButtonDisabled]}
-            onPress={handleLogin}
+            style={[styles.signInButton, (loading || showSuccess) && styles.signInButtonDisabled]}
+            onPress={handleSignIn}
             disabled={loading || showSuccess}
           >
             {loading ? (
               <ActivityIndicator color="#000000" />
             ) : (
-              <Text style={styles.loginText}>LOG IN</Text>
+              <Text style={styles.signInText}>SIGN IN</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -362,7 +363,7 @@ const styles = StyleSheet.create({
   },
   inputSection: {
     paddingHorizontal: width * 0.05,
-    paddingVertical: height * 0.010,
+    paddingVertical: height * 0.015,
   },
   inputLabel: {
     fontFamily: "Poppins",
@@ -397,9 +398,9 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   eyeIcon: {
-    padding: width * 0.0001,
+    padding: width * 0.00001,
   },
-  loginButton: {
+  signInButton: {
     position: "absolute",
     top: height * 0.69,
     left: width * 0.09,
@@ -410,10 +411,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  loginButtonDisabled: {
+  signInButtonDisabled: {
     opacity: 0.6,
   },
-  loginText: {
+  signInText: {
     fontFamily: "Poppins",
     fontWeight: "700",
     fontSize: width * 0.04,
@@ -453,4 +454,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LoginScreen;
+export default SigninScreen;
