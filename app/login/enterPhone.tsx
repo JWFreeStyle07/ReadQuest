@@ -175,7 +175,7 @@ const EnterPhone = () => {
       {/* Terms and Privacy Text */}
       <View style={styles.termsContainer}>
         <Text style={styles.termsText}>
-          By providing phone number, I hereby agree and accept the{" "}
+          By providing phone number, I hereby agree and accept {"\n"} the{" "}
           <Text style={styles.linkText} onPress={handleTermsPress}>
             Terms of Use
           </Text>{" "}
