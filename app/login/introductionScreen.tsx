@@ -2,13 +2,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");
@@ -77,9 +77,9 @@ const IntroductionScreen = () => {
       wiggle,
       scale,
     ]).start(() => {
-      // Navigate to student dashboard after animation
+      // Navigate to student dashboard after animation EDIT
       setTimeout(() => {
-        router.push("../../student/studentDashboard");
+        router.push("../../algorithm/pronunciation");
       }, 500);
     });
   };
