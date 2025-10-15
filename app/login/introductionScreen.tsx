@@ -79,7 +79,7 @@ const IntroductionScreen = () => {
     ]).start(() => {
       // Navigate to student dashboard after animation EDIT
       setTimeout(() => {
-        router.push("../../algorithm/pronunciation");
+        router.push("../../student/studentDashboard");
       }, 500);
     });
   };
