@@ -88,3 +88,12 @@ export async function getStoryPronunciationResult(uid: string, storyTitle: strin
     throw error;
   }
 }
+
+// Add this function to authService.ts
+export async function setUserType(uid: string, userType: 'student' | 'teacher') {
+  const userRef = doc(db, "users", uid);
+  await setDoc(userRef, {
+    userType,
+    createdAt: new Date().toISOString(),
+  }, { merge: true });
+}

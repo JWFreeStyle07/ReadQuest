@@ -45,6 +45,8 @@
 //     throw new Error("No such user profile!");
 //   }
 // }
+
+//checkpoint!
 import {
   createUserWithEmailAndPassword,
   PhoneAuthProvider,
@@ -53,20 +55,32 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "./firebaseConfig";
 
+export function getCurrentUserId(): string | null {
+  return auth.currentUser ? auth.currentUser.uid : null;
+}
+
 // Sign Up and store user profile
-export async function signUp(email: string, password: string, name: string, grade: string) {
+export async function signUp(
+  email: string, 
+  password: string, 
+  name: string, 
+  grade: string,
+  userType: 'student' | 'teacher' = 'student' // Add this parameter with default
+) {
   const userCred = await createUserWithEmailAndPassword(auth, email, password);
   
-  // Save profile in Firestore
+  // Save profile in Firestore with userType
   await setDoc(doc(db, "users", userCred.user.uid), {
     name,
     grade,
     email,
+    userType, // Add this field
     scores: [],
     readerType: "Beginner",
+    createdAt: new Date().toISOString(),
   });
   
   return userCred.user;
@@ -123,7 +137,14 @@ export async function verifyPhoneOTP(verificationId: string, code: string) {
 }
 
 // Create or Update User Profile for Phone Auth
-export async function createPhoneUserProfile(uid: string, phoneNumber: string, name?: string, grade?: string) {
+// Update this function in authService.ts
+export async function createPhoneUserProfile(
+  uid: string, 
+  phoneNumber: string, 
+  name?: string, 
+  grade?: string,
+  userType?: 'student' | 'teacher'
+) {
   const userRef = doc(db, "users", uid);
   const userSnap = await getDoc(userRef);
   
@@ -133,8 +154,17 @@ export async function createPhoneUserProfile(uid: string, phoneNumber: string, n
       name: name || "",
       grade: grade || "",
       phoneNumber,
+      userType: userType || "student", // Default to student if not provided
       scores: [],
       readerType: "Beginner",
+      createdAt: new Date().toISOString(),
     });
+  } else {
+    // Update existing profile with userType if provided
+    if (userType) {
+      await updateDoc(userRef, {
+        userType,
+      });
+    }
   }
 }
