@@ -3,9 +3,10 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
+import Opening from '@/components/Opening';
 import { useColorScheme } from '@/components/useColorScheme';
 
 export {
@@ -13,19 +14,17 @@ export {
   ErrorBoundary
 } from 'expo-router';
 
-// export const unstable_settings = {
-//   // Ensure that reloading on `/modal` keeps a back button present.
-//   initialRouteName: '(tabs)',
-// };
-
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'PottaOne-Regular': require('../assets/fonts/PottaOne-Regular.ttf'),
     ...FontAwesome.font,
   });
+
+  const [showOpening, setShowOpening] = useState(true);
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -39,7 +38,11 @@ export default function RootLayout() {
   }, [loaded]);
 
   if (!loaded) {
-    return null;
+    return null; // Native splash is showing
+  }
+
+  if (showOpening) {
+    return <Opening onLoadComplete={() => setShowOpening(false)} />;
   }
 
   return <RootLayoutNav />;
