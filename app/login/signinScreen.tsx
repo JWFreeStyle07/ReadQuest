@@ -499,32 +499,19 @@ const SigninScreen = () => {
   const successOpacity = useRef(new Animated.Value(0)).current;
   const checkmarkScale = useRef(new Animated.Value(0)).current;
 
-  // Retrieve user type from AsyncStorage on mount
-  // useEffect(() => {
-  //   const getUserType = async () => {
-  //     try {
-  //       const pendingUserType = await AsyncStorage.getItem('pendingUserType');
-  //       if (pendingUserType) {
-  //         setUserType(pendingUserType as 'student' | 'teacher');
-  //       }
-  //     } catch (error) {
-  //       console.error("Error retrieving user type:", error);
-  //     }
-  //   };
-  //   getUserType();
-  // }, []);
   useEffect(() => {
   const getUserType = async () => {
     try {
       const pendingUserType = await AsyncStorage.getItem('pendingUserType');
+      console.log("📱 Retrieved pendingUserType from AsyncStorage:", pendingUserType); // Add this
       if (pendingUserType) {
         setUserType(pendingUserType as 'student' | 'teacher');
       } else {
-        setUserType('student'); // Default fallback
+        setUserType('student');
       }
     } catch (error) {
       console.error("Error retrieving user type:", error);
-      setUserType('student'); // Default fallback on error
+      setUserType('student');
     } finally {
       setInitializing(false);
     }
