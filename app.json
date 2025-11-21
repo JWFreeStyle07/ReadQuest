@@ -4,7 +4,7 @@
     "slug": "ReadQuest",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/login/ReadQuest.png",
     "scheme": "readquest",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
