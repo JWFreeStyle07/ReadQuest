@@ -535,12 +535,608 @@
 
 // export default StudentDashboard;
 
+//checkpoint
+
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import { LinearGradient } from "expo-linear-gradient";
+// import { useRouter } from "expo-router";
+// import { doc, getDoc } from "firebase/firestore";
+// import React, { useEffect, useRef, useState } from "react";
+// import {
+//   Dimensions,
+//   Image,
+//   Modal,
+//   ScrollView,
+//   StyleSheet,
+//   Text,
+//   TouchableOpacity,
+//   View
+// } from "react-native";
+// import { auth, db } from "../../firebase/firebaseConfig";
+
+// const { width, height } = Dimensions.get("window");
+
+// // Story data with titles, points, and images
+// const STORIES = [
+//   { 
+//     title: "Telling Time", 
+//     points: 100, 
+//     image: require("../../assets/images/books/tellingTime.png"),
+//     route: "../../algorithm/pronunciation" // Path to tellingTime screen
+//   },
+//   { 
+//     title: "Counting the Hours", 
+//     points: 80, 
+//     image: require("../../assets/images/books/countingTheHours.png"),
+//     route: "../../algorithm/countingTheHours" // Path to countingTheHours screen
+//   },
+//   { 
+//     title: "Nose Bleeds", 
+//     points: 90, 
+//     image: require("../../assets/images/books/noseBleeds.png"),
+//     route: "../../algorithm/noseBleeds" // Path to noseBleeds screen
+//   },
+//   { 
+//     title: "Matilda", 
+//     points: 100, 
+//     image: require("../../assets/images/books/Matilda.png"),
+//     route: "../../books/Matilda" // Placeholder route
+//   },
+//   { 
+//     title: "The Secret Ingredient", 
+//     points: 120, 
+//     image: require("../../assets/images/books/secretIngredient.png"),
+//     route: "../../books/secretIngredient" // Placeholder route
+//   },
+//   { 
+//     title: "Journey to the Stars", 
+//     points: 110, 
+//     image: require("../../assets/images/books/journeyToTheStars.png"),
+//     route: "../../books/journeyToTheStars" // Placeholder route
+//   },
+// ];
+
+// // Suggested books data - matched with STORIES
+// const SUGGESTED_BOOKS = [
+//   { 
+//     id: 1, 
+//     image: require("../../assets/images/books/tellingTime.png"), 
+//     route: "../../algorithm/tellingTime",
+//     title: "Telling Time"
+//   },
+//   { 
+//     id: 2, 
+//     image: require("../../assets/images/books/countingTheHours.png"), 
+//     route: "../../algorithm/countingTheHours",
+//     title: "Counting the Hours"
+//   },
+//   { 
+//     id: 3, 
+//     image: require("../../assets/images/books/noseBleeds.png"), 
+//     route: "../../algorithm/noseBleeds",
+//     title: "Nose Bleeds"
+//   },
+//   { 
+//     id: 4, 
+//     image: require("../../assets/images/books/secretIngredient.png"), 
+//     route: "../../books/secretIngredient",
+//     title: "The Secret Ingredient"
+//   },
+//   { 
+//     id: 5, 
+//     image: require("../../assets/images/books/Matilda.png"), 
+//     route: "../../books/Matilda",
+//     title: "Matilda"
+//   },
+//   { 
+//     id: 6, 
+//     image: require("../../assets/images/books/journeyToTheStars.png"), 
+//     route: "../../books/journeyToTheStars",
+//     title: "Journey to the Stars"
+//   },
+// ];
+
+// const StudentDashboard = () => {
+//   const router = useRouter();
+//   const [username, setUsername] = useState("");
+//   const [starPoints, setStarPoints] = useState(12000);
+//   const [todayStory, setTodayStory] = useState(STORIES[0]);
+//   const [showStarPopup, setShowStarPopup] = useState(false);
+//   const [showPointsPopup, setShowPointsPopup] = useState(false);
+//   const [centerIndex, setCenterIndex] = useState(2);
+//   const scrollViewRef = useRef<ScrollView>(null);
+
+//   useEffect(() => {
+//     // Fetch user data from Firebase
+//     const fetchUserData = async () => {
+//       const user = auth.currentUser;
+//       if (user) {
+//         const userDoc = await getDoc(doc(db, "users", user.uid));
+//         if (userDoc.exists()) {
+//           const userData = userDoc.data();
+//           setUsername(userData.name || userData.username || "User");
+//           setStarPoints(userData.starPoints || 0);
+//         }
+//       }
+//     };
+
+//     // Select random story for today
+//     const selectTodayStory = async () => {
+//       const today = new Date().toDateString();
+//       const savedDate = await AsyncStorage.getItem("storyDate");
+      
+//       if (savedDate !== today) {
+//         const randomIndex = Math.floor(Math.random() * STORIES.length);
+//         setTodayStory(STORIES[randomIndex]);
+//         await AsyncStorage.setItem("storyDate", today);
+//         await AsyncStorage.setItem("storyIndex", randomIndex.toString());
+//       } else {
+//         const savedIndex = parseInt((await AsyncStorage.getItem("storyIndex")) || "0");
+//         setTodayStory(STORIES[savedIndex]);
+//       }
+//     };
+
+//     fetchUserData();
+//     selectTodayStory();
+//   }, []);
+
+//   const handleScroll = (event: any) => {
+//     const scrollPosition = event.nativeEvent.contentOffset.x;
+//     const itemWidth = width * 0.43;
+//     const index = Math.round(scrollPosition / itemWidth);
+//     setCenterIndex(index);
+//   };
+
+//   const getBookScale = (index: number) => {
+//     return index === centerIndex ? 1 : 0.8;
+//   };
+
+//   const getBookStyle = (index: number) => {
+//     const isCenterBook = index === centerIndex;
+//     return {
+//       width: isCenterBook ? width * 0.43 : width * 0.39,
+//       height: isCenterBook ? height * 0.305 : height * 0.245,
+//       marginTop: isCenterBook ? 0 : height * 0.03,
+//     };
+//   };
+
+//   return (
+//     <LinearGradient
+//       colors={["#0d4949", "#315e35"]}
+//       locations={[0.1538, 0.5913]}
+//       style={styles.container}
+//     >
+//       <ScrollView showsVerticalScrollIndicator={false}>
+//         {/* Header Section */}
+//         <View style={styles.header}>
+//           {/* Profile Images */}
+//           <View style={styles.profileContainer}>
+//             <View style={styles.profileCircle}>
+//               <Image
+//                 source={require("../../assets/images/welcome/circleBg.png")}
+//                 style={styles.profileBgImage}
+//                 resizeMode="cover"
+//               />
+//             </View>
+//             <Image
+//               source={require("../../assets/images/welcome/birdHead.png")}
+//               style={styles.profileIcon}
+//               resizeMode="contain"
+//             />
+//           </View>
+
+//           {/* Greeting Text */}
+//           <View style={styles.greetingContainer}>
+//             <Text style={styles.helloText}>Hello!</Text>
+//             <Text style={styles.usernameText}>{username}</Text>
+//           </View>
+
+//           {/* Star Points Button */}
+//           <TouchableOpacity
+//             style={styles.starButton}
+//             onPress={() => setShowStarPopup(true)}
+//           >
+//             <Image
+//               source={require("../../assets/images/welcome/star.png")}
+//               style={styles.starIcon}
+//               resizeMode="contain"
+//             />
+//             <Text style={styles.starPointsText}>{starPoints}</Text>
+//           </TouchableOpacity>
+//         </View>
+
+//         {/* Today's Pick Rectangle */}
+//         <View style={styles.todayPickContainer}>
+//           <Text style={styles.todayPickLabel}>Today's pick</Text>
+//           <Text style={styles.todayPickTitle}>"{todayStory.title}"</Text>
+
+//           {/* Read and Points Buttons */}
+//           <View style={styles.buttonRow}>
+//             <TouchableOpacity
+//               style={styles.readButton}
+//               onPress={() => {
+//                 // Navigate to the specific story screen
+//                 router.push(todayStory.route as any);
+//               }}
+//             >
+//               <Text style={styles.readButtonText}>Read</Text>
+//             </TouchableOpacity>
+
+//             <TouchableOpacity
+//               style={styles.pointsButton}
+//               onPress={() => setShowPointsPopup(true)}
+//             >
+//               <Image
+//                 source={require("../../assets/images/welcome/star.png")}
+//                 style={styles.pointsIcon}
+//                 resizeMode="contain"
+//               />
+//               <Text style={styles.pointsText}>{todayStory.points}</Text>
+//             </TouchableOpacity>
+//           </View>
+
+//           {/* Story Image */}
+//           <Image
+//             source={todayStory.image}
+//             style={styles.todayPickImage}
+//             resizeMode="contain"
+//           />
+//         </View>
+
+//         {/* Suggested Readings Section */}
+//         <View style={styles.suggestedHeader}>
+//           <Text style={styles.suggestedText}>Suggested readings</Text>
+//           <TouchableOpacity onPress={() => router.push("../../student/allBooks")}>
+//             <Text style={styles.seeAllText}>See All</Text>
+//           </TouchableOpacity>
+//         </View>
+
+//         {/* Horizontal ScrollView for Books */}
+//         <ScrollView
+//           ref={scrollViewRef}
+//           horizontal
+//           showsHorizontalScrollIndicator={false}
+//           onScroll={handleScroll}
+//           scrollEventThrottle={16}
+//           contentContainerStyle={styles.booksScrollContent}
+//           snapToInterval={width * 0.43}
+//           decelerationRate="fast"
+//         >
+//           {SUGGESTED_BOOKS.map((book, index) => (
+//             <TouchableOpacity
+//               key={book.id}
+//               style={[styles.bookContainer, getBookStyle(index)]}
+//               onPress={() => {
+//                 // Navigate to the specific book's screen
+//                 router.push(book.route as any);
+//               }}
+//             >
+//               <Image
+//                 source={book.image}
+//                 style={styles.bookImage}
+//                 resizeMode="cover"
+//               />
+//             </TouchableOpacity>
+//           ))}
+//         </ScrollView>
+
+//         {/* Next Reward Rectangle */}
+//         <View style={styles.rewardContainer}>
+//           <Image
+//             source={require("../../assets/images/welcome/starJar.png")}
+//             style={styles.trophyImage}
+//             resizeMode="contain"
+//           />
+//           <Text style={styles.rewardText}>Next reward at 100 {"\n"}Stars!</Text>
+//           <View style={styles.rewardButton}>
+//             <Image
+//               source={require("../../assets/images/welcome/star.png")}
+//               style={styles.rewardStarIcon}
+//               resizeMode="contain"
+//             />
+//             <Text style={styles.rewardStarText}>100</Text>
+//           </View>
+//         </View>
+//       </ScrollView>
+
+//       {/* Star Points Popup */}
+//       <Modal
+//         visible={showStarPopup}
+//         transparent
+//         animationType="fade"
+//         onRequestClose={() => setShowStarPopup(false)}
+//       >
+//         <TouchableOpacity
+//           style={styles.popupOverlay}
+//           activeOpacity={1}
+//           onPress={() => setShowStarPopup(false)}
+//         >
+//           <View style={styles.popupContainer}>
+//             <Text style={styles.popupText}>
+//               You have {starPoints} star points! Keep reading to earn more.
+//             </Text>
+//           </View>
+//         </TouchableOpacity>
+//       </Modal>
+
+//       {/* Points Info Popup */}
+//       <Modal
+//         visible={showPointsPopup}
+//         transparent
+//         animationType="fade"
+//         onRequestClose={() => setShowPointsPopup(false)}
+//       >
+//         <TouchableOpacity
+//           style={styles.popupOverlay}
+//           activeOpacity={1}
+//           onPress={() => setShowPointsPopup(false)}
+//         >
+//           <View style={styles.popupContainer}>
+//             <Text style={styles.popupText}>Points for reading</Text>
+//           </View>
+//         </TouchableOpacity>
+//       </Modal>
+//     </LinearGradient>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//   },
+//   header: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     paddingTop: height * 0.091,
+//     paddingHorizontal: width * 0.083,
+//     marginBottom: height * 0.025,
+//   },
+//   profileContainer: {
+//     position: "relative",
+//     width: width * 0.161,
+//     height: height * 0.08,
+//   },
+//   profileCircle: {
+//     width: width * 0.161,
+//     height: height * 0.08,
+//     borderRadius: width * 0.0805,
+//     overflow: "hidden",
+//   },
+//   profileBgImage: {
+//     width: "100%",
+//     height: "100%",
+//   },
+//   profileIcon: {
+//     position: "absolute",
+//     top: height * -0.015,
+//     left: width * 0.000,
+//     width: width * 0.165,
+//     height: height * 0.112,
+//   },
+//   greetingContainer: {
+//     marginLeft: width * 0.026,
+//     flex: 1,
+//   },
+//   helloText: {
+//     fontFamily: "Poppins",
+//     fontWeight: "500",
+//     fontSize: width * 0.0375,
+//     lineHeight: width * 0.0375,
+//     color: "#FFFFFF",
+//     marginBottom: height * 0.005,
+//   },
+//   usernameText: {
+//     fontFamily: "Poppins",
+//     fontWeight: "700",
+//     fontSize: width * 0.0375,
+//     lineHeight: width * 0.0375,
+//     color: "#FFFFFF",
+//   },
+//   starButton: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     backgroundColor: "#94D231",
+//     borderRadius: 100,
+//     paddingVertical: height * 0.008,
+//     paddingHorizontal: width * 0.035,
+//   },
+//   starIcon: {
+//     width: width * 0.059,
+//     height: height * 0.029,
+//     marginRight: width * 0.015,
+//     borderRadius: 30
+//   },
+//   starPointsText: {
+//     fontFamily: "Poppins",
+//     fontWeight: "900",
+//     fontSize: width * 0.0375,
+//     lineHeight: width * 0.0375,
+//     color: "#ffffffff",
+//   },
+//   todayPickContainer: {
+//     marginHorizontal: width * 0.047,
+//     backgroundColor: "#94D231D9",
+//     borderRadius: 30,
+//     borderWidth: 1,
+//     borderColor: "#94D231",
+//     padding: width * 0.062,
+//     marginBottom: height * 0.025,
+//     position: "relative",
+//   },
+//   todayPickLabel: {
+//     fontFamily: "Poppins",
+//     fontWeight: "500",
+//     fontSize: width * 0.0375,
+//     lineHeight: width * 0.0375,
+//     color: "#28242C",
+//     marginBottom: height * 0.01,
+//   },
+//   todayPickTitle: {
+//     fontFamily: "Poppins",
+//     fontWeight: "700",
+//     fontSize: width * 0.05,
+//     lineHeight: width * 0.05,
+//     color: "#28242C",
+//     marginBottom: height * 0.015,
+//   },
+//   buttonRow: {
+//     flexDirection: "row",
+//     gap: width * 0.02,
+//   },
+//   readButton: {
+//     backgroundColor: "#315E34D9",
+//     borderRadius: 100,
+//     paddingVertical: height * 0.008,
+//     paddingHorizontal: width * 0.045,
+//   },
+//   readButtonText: {
+//     fontFamily: "Poppins",
+//     fontWeight: "600",
+//     fontSize: width * 0.0325,
+//     lineHeight: width * 0.0325,
+//     color: "#FFFFFF",
+//   },
+//   pointsButton: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     backgroundColor: "#315E34D9",
+//     borderRadius: 100,
+//     paddingVertical: height * 0.008,
+//     paddingHorizontal: width * 0.03,
+//     gap: width * 0.015,
+//   },
+//   pointsIcon: {
+//     width: width * 0.042,
+//     height: height * 0.02,
+//     borderRadius: width * 0.021,
+//   },
+//   pointsText: {
+//     fontFamily: "Poppins",
+//     fontWeight: "600",
+//     fontSize: width * 0.0325,
+//     lineHeight: width * 0.0325,
+//     color: "#FFFFFF",
+//   },
+//   todayPickImage: {
+//     position: "absolute",
+//     top: height * 0.007,
+//     right: width * 0.037,
+//     width: width * 0.245,
+//     height: height * 0.143,
+//     borderRadius: 0
+//   },
+//   suggestedHeader: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     paddingHorizontal: width * 0.073,
+//     marginBottom: height * 0.02,
+//   },
+//   suggestedText: {
+//     fontFamily: "Poppins",
+//     fontWeight: "700",
+//     fontSize: width * 0.04,
+//     lineHeight: width * 0.04,
+//     color: "#FFFFFF",
+//   },
+//   seeAllText: {
+//     fontFamily: "Poppins",
+//     fontWeight: "700",
+//     fontSize: width * 0.0375,
+//     lineHeight: width * 0.0375,
+//     color: "#F8CB5E",
+//     textDecorationLine: "underline",
+//   },
+//   booksScrollContent: {
+//     paddingHorizontal: width * 0.095,
+//     gap: width * 0.02,
+//     marginBottom: height * 0.03,
+//   },
+//   bookContainer: {
+//     borderRadius: 12,
+//     overflow: "hidden",
+//   },
+//   bookImage: {
+//     width: "100%",
+//     height: "100%",
+//   },
+//   rewardContainer: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     top: width * 0.1,
+//     marginHorizontal: width * 0.047,
+//     backgroundColor: "#94D231",
+//     borderRadius: 30,
+//     padding: width * 0.03,
+//     marginBottom: height * 0.5,
+//   },
+//   trophyImage: {
+//     width: width * 0.244,
+//     height: height * 0.093,
+//     marginRight: width * 0.01,
+//   },
+//   rewardText: {
+//     flex: 1,
+//     fontFamily: "Poppins",
+//     fontWeight: "700",
+//     fontSize: width * 0.04,
+//     lineHeight: width * 0.04,
+//     color: "#28242C",
+//   },
+//   rewardButton: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     backgroundColor: "#315E34D9",
+//     borderRadius: 100,
+//     paddingVertical: height * 0.005,
+//     paddingHorizontal: width * 0.03,
+//     paddingRight: width * 0.05,
+//     gap: width * 0.015,
+//   },
+//   rewardStarIcon: {
+//     width: width * 0.042,
+//     height: height * 0.02,
+//     borderRadius: width * 0.021,
+//   },
+//   rewardStarText: {
+//     fontFamily: "Poppins",
+//     fontWeight: "600",
+//     fontSize: width * 0.0325,
+//     lineHeight: width * 0.0325,
+//     color: "#FFFFFF",
+//   },
+//   popupOverlay: {
+//     flex: 1,
+//     backgroundColor: "rgba(0, 0, 0, 0.5)",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   popupContainer: {
+//     backgroundColor: "#315E34D9",
+//     borderRadius: 20,
+//     padding: width * 0.1,
+//     maxWidth: width * 0.8,
+//   },
+//   popupText: {
+//     fontFamily: "Poppins",
+//     fontWeight: "600",
+//     fontSize: width * 0.04,
+//     lineHeight: width * 0.048,
+//     color: "#FFFFFF",
+//     textAlign: "center",
+//   },
+// });
+
+// export default StudentDashboard;
+
+//checkpoint
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   Modal,
@@ -553,6 +1149,18 @@ import {
 import { auth, db } from "../../firebase/firebaseConfig";
 
 const { width, height } = Dimensions.get("window");
+
+interface FirebaseBook {
+  id: string;
+  title: string;
+  passage: string;
+  wordCount: number;
+  difficulty: string;
+  points: number;
+  imageURL: string;
+  createdAt: string;
+  accessible: boolean;
+}
 
 // Story data with titles, points, and images
 const STORIES = [
@@ -642,7 +1250,11 @@ const StudentDashboard = () => {
   const [showStarPopup, setShowStarPopup] = useState(false);
   const [showPointsPopup, setShowPointsPopup] = useState(false);
   const [centerIndex, setCenterIndex] = useState(2);
+  const [teacherCenterIndex, setTeacherCenterIndex] = useState(0);
+  const [firebaseBooks, setFirebaseBooks] = useState<FirebaseBook[]>([]);
+  const [loadingBooks, setLoadingBooks] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
+  const teacherScrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     // Fetch user data from Firebase
@@ -674,8 +1286,45 @@ const StudentDashboard = () => {
       }
     };
 
+    // Fetch books from Firebase
+    const fetchFirebaseBooks = async () => {
+      try {
+        setLoadingBooks(true);
+        const booksRef = collection(db, "books");
+        // Only fetch accessible books for students
+        const q = query(booksRef, where("accessible", "==", true));
+        const querySnapshot = await getDocs(q);
+        
+        const booksData: FirebaseBook[] = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          booksData.push({
+            id: doc.id,
+            title: data.title || "",
+            passage: data.passage || "",
+            wordCount: data.wordCount || 0,
+            difficulty: data.difficulty || "",
+            points: data.points || 0,
+            imageURL: data.imageURL || "",
+            createdAt: data.createdAt || "",
+            accessible: data.accessible !== undefined ? data.accessible : true,
+          });
+        });
+        
+        // Sort by creation time (newest first)
+        booksData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
+        setFirebaseBooks(booksData);
+        setLoadingBooks(false);
+      } catch (error) {
+        console.error("Error fetching books:", error);
+        setLoadingBooks(false);
+      }
+    };
+
     fetchUserData();
     selectTodayStory();
+    fetchFirebaseBooks();
   }, []);
 
   const handleScroll = (event: any) => {
@@ -683,6 +1332,13 @@ const StudentDashboard = () => {
     const itemWidth = width * 0.43;
     const index = Math.round(scrollPosition / itemWidth);
     setCenterIndex(index);
+  };
+
+  const handleTeacherScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x;
+    const itemWidth = width * 0.43;
+    const index = Math.round(scrollPosition / itemWidth);
+    setTeacherCenterIndex(index);
   };
 
   const getBookScale = (index: number) => {
@@ -696,6 +1352,30 @@ const StudentDashboard = () => {
       height: isCenterBook ? height * 0.305 : height * 0.245,
       marginTop: isCenterBook ? 0 : height * 0.03,
     };
+  };
+
+  const getTeacherBookStyle = (index: number) => {
+    const isCenterBook = index === teacherCenterIndex;
+    return {
+      width: isCenterBook ? width * 0.43 : width * 0.39,
+      height: isCenterBook ? height * 0.305 : height * 0.245,
+      marginTop: isCenterBook ? 0 : height * 0.03,
+    };
+  };
+
+  const handleBookPress = (book: FirebaseBook) => {
+    // Navigate to a book reading screen with the book data
+    router.push({
+      pathname: "../../student/readBook",
+      params: {
+        bookId: book.id,
+        title: book.title,
+        passage: book.passage,
+        points: book.points.toString(),
+        difficulty: book.difficulty,
+        imageURL: book.imageURL,
+      },
+    });
   };
 
   return (
@@ -789,7 +1469,7 @@ const StudentDashboard = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Horizontal ScrollView for Books */}
+        {/* Horizontal ScrollView for Suggested Books */}
         <ScrollView
           ref={scrollViewRef}
           horizontal
@@ -817,6 +1497,48 @@ const StudentDashboard = () => {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Teacher Approved Readings Section */}
+        <View style={styles.suggestedHeader}>
+          <Text style={styles.suggestedText}>Teacher Approved Readings</Text>
+        </View>
+
+        {/* Loading or Books List */}
+        {loadingBooks ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#94D231" />
+            <Text style={styles.loadingText}>Loading books...</Text>
+          </View>
+        ) : firebaseBooks.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No books available yet</Text>
+          </View>
+        ) : (
+          <ScrollView
+            ref={teacherScrollViewRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleTeacherScroll}
+            scrollEventThrottle={16}
+            contentContainerStyle={styles.booksScrollContent}
+            snapToInterval={width * 0.43}
+            decelerationRate="fast"
+          >
+            {firebaseBooks.map((book, index) => (
+              <TouchableOpacity
+                key={book.id}
+                style={[styles.bookContainer, getTeacherBookStyle(index)]}
+                onPress={() => handleBookPress(book)}
+              >
+                <Image
+                  source={{ uri: book.imageURL }}
+                  style={styles.bookImage}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
 
         {/* Next Reward Rectangle */}
         <View style={styles.rewardContainer}>
@@ -1057,6 +1779,29 @@ const styles = StyleSheet.create({
   bookImage: {
     width: "100%",
     height: "100%",
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: height * 0.05,
+  },
+  loadingText: {
+    fontFamily: "Poppins",
+    fontWeight: "500",
+    fontSize: width * 0.035,
+    color: "#FFFFFF",
+    marginTop: height * 0.01,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: height * 0.05,
+  },
+  emptyText: {
+    fontFamily: "Poppins",
+    fontWeight: "500",
+    fontSize: width * 0.035,
+    color: "#FFFFFF",
   },
   rewardContainer: {
     flexDirection: "row",
