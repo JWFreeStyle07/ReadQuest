@@ -39,3 +39,14 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+.gradle/
+local.properties
+
+# Build folders
+build/
+.cxx/
