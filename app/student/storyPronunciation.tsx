@@ -3466,7 +3466,12 @@ const StoryPronunciation = () => {
         {pronunciationResult && !isRecording && (
           <TouchableOpacity
             style={[styles.button, styles.quizButton]}
-            onPress={() => router.push('../../student/studentQuiz')}
+            onPress={() => router.push({
+              pathname: '/student/studentQuiz',  // ✅ Correct path
+              params: {
+                bookTitle: storyTitle,  // ✅ Pass the bookTitle parameter
+              },
+            })}
           >
             <Text style={styles.buttonText}>📝 Take Quiz</Text>
           </TouchableOpacity>
