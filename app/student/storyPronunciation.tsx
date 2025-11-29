@@ -3480,7 +3480,13 @@ const StoryPronunciation = () => {
         {/* Vocabulary Support */}
         <TouchableOpacity
           style={[styles.button, styles.vocabButton]}
-          onPress={() => router.push('../../vocabSupport/vocabSupport')}
+          onPress={() => router.push({
+            pathname: '../../vocabSupport/vocabSupport',
+            params: {
+              title: storyTitle,
+              passage: storyPassage, // Pass the actual passage
+            }
+          })}
         >
           <Text style={styles.buttonText}>📚 Vocabulary Support</Text>
         </TouchableOpacity>
