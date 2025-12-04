@@ -1,20 +1,18 @@
 // import { MaterialCommunityIcons } from '@expo/vector-icons';
-// import { Audio } from 'expo-av';
 // import { useLocalSearchParams, useRouter } from "expo-router";
 // import * as Speech from 'expo-speech';
 // import React, { useRef, useState } from "react";
 // import {
-//   ActivityIndicator,
-//   Alert,
-//   Animated,
-//   Dimensions,
-//   Modal,
-//   PanResponder,
-//   ScrollView,
-//   StyleSheet,
-//   Text,
-//   TouchableOpacity,
-//   View,
+//     Alert,
+//     Animated,
+//     Dimensions,
+//     Modal,
+//     PanResponder,
+//     ScrollView,
+//     StyleSheet,
+//     Text,
+//     TouchableOpacity,
+//     View,
 // } from "react-native";
 
 // const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -28,17 +26,7 @@
 //   return base + 2;
 // };
 
-// type DictionaryData = {
-//   word: string;
-//   phonetic: string;
-//   phonetics: Array<{ text?: string; audio?: string }>;
-//   meanings: Array<{
-//     partOfSpeech: string;
-//     definitions: Array<{ definition: string; example?: string }>;
-//   }>;
-// };
-
-// export default function VocabularySupport() {
+// export default function OfflineVocabularySupport() {
 //   const { title, passage } = useLocalSearchParams<{ title: string; passage: string }>();
 //   const router = useRouter();
 
@@ -48,96 +36,43 @@
 //   const [selectedWord, setSelectedWord] = useState<string | null>(null);
 //   const [highlightedWordIndex, setHighlightedWordIndex] = useState<number>(-1);
 //   const [showPopup, setShowPopup] = useState(false);
-//   const [dictionaryData, setDictionaryData] = useState<DictionaryData | null>(null);
-//   const [filipinoTranslation, setFilipinoTranslation] = useState<string>("");
-//   const [loading, setLoading] = useState(false);
 //   const [showSettings, setShowSettings] = useState(false);
 //   const [fontSize, setFontSize] = useState(20);
 //   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
-//   const [sound, setSound] = useState<Audio.Sound | null>(null);
+//   const [isReading, setIsReading] = useState(false);
 
 //   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 //   const words = storyText.split(" ");
 
-//   // Fetch dictionary data
-//   const fetchDictionaryData = async (word: string) => {
-//     setLoading(true);
-//     console.log('🔍 Fetching data for word:', word);
-    
-//     try {
-//       // Fetch English definition
-//       const dictResponse = await fetch(
-//         `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`
-//       );
-      
-//       console.log('📖 Dictionary response status:', dictResponse.status);
-      
-//       if (dictResponse.ok) {
-//         const dictData: any = await dictResponse.json();
-//         console.log('📖 Dictionary data:', JSON.stringify(dictData[0], null, 2));
-//         setDictionaryData(dictData[0]);
-//       } else {
-//         console.log('❌ Dictionary API failed');
-//         setDictionaryData(null);
-//       }
+//   // Read text aloud
+//   const toggleReadText = async () => {
+//     if (isReading) {
+//       // Stop reading
+//       Speech.stop();
+//       setIsReading(false);
+//     } else {
+//       // Start reading
+//       setIsReading(true);
+//       const voiceOptions = {
+//         language: 'en-US',
+//         pitch: voiceGender === 'female' ? 1.2 : 0.8,
+//         rate: 0.9,
+//         onDone: () => setIsReading(false),
+//         onStopped: () => setIsReading(false),
+//         onError: () => {
+//           setIsReading(false);
+//           Alert.alert("Error", "Failed to read text");
+//         },
+//       };
 
-//       // Fetch Filipino translation
-//       const translationResponse = await fetch(
-//         `https://api.mymemory.translated.net/get?q=${word}&langpair=en|fil`
-//       );
-      
-//       console.log('🌏 Translation response status:', translationResponse.status);
-      
-//       if (translationResponse.ok) {
-//         const translationData: any = await translationResponse.json();
-//         console.log('🌏 Translation data:', translationData);
-//         const translation = translationData?.responseData?.translatedText || "Walang salin";
-//         console.log('🌏 Final translation:', translation);
-//         setFilipinoTranslation(translation);
-//       } else {
-//         console.log('❌ Translation API failed');
-//         setFilipinoTranslation("Walang salin");
-//       }
-//     } catch (error) {
-//       console.error("❌ Error fetching data:", error);
-//       setDictionaryData(null);
-//       setFilipinoTranslation("Walang salin");
-//     } finally {
-//       setLoading(false);
+//       Speech.speak(storyText, voiceOptions);
 //     }
 //   };
 
-//   // Play pronunciation audio with TTS fallback
-//   const playPronunciation = async () => {
-//     if (!dictionaryData || !selectedWord) return;
+//   // Play pronunciation for selected word (offline TTS only)
+//   const playPronunciation = () => {
+//     if (!selectedWord) return;
 
-//     // Try to use API audio first
-//     const audioUrl = dictionaryData.phonetics.find((p) => p.audio)?.audio;
-    
-//     if (audioUrl) {
-//       try {
-//         if (sound) {
-//           await sound.unloadAsync();
-//         }
-
-//         const { sound: newSound } = await Audio.Sound.createAsync(
-//           { uri: audioUrl },
-//           { shouldPlay: true }
-//         );
-//         setSound(newSound);
-
-//         newSound.setOnPlaybackStatusUpdate((status) => {
-//           if (status.isLoaded && status.didJustFinish) {
-//             newSound.unloadAsync();
-//           }
-//         });
-//         return;
-//       } catch (error) {
-//         console.error("Error playing API audio:", error);
-//       }
-//     }
-
-//     // Fallback to Text-to-Speech with gender selection
 //     try {
 //       const voiceOptions = {
 //         language: 'en-US',
@@ -152,8 +87,8 @@
 //     }
 //   };
 
-//   // Handle word press with long press detection
-//   const handleWordPress = async (word: string, index: number) => {
+//   // Handle word press - offline mode shows basic info
+//   const handleWordPress = (word: string, index: number) => {
 //     if (showPopup) return; // Prevent selecting while popup is open
 
 //     const cleanWord = word.replace(/[^a-zA-Z]/g, "").toLowerCase();
@@ -165,14 +100,11 @@
 
 //     // Animate popup slide up
 //     Animated.spring(slideAnim, {
-//       toValue: SCREEN_HEIGHT * 0.25, // Start higher for more content visibility
+//       toValue: SCREEN_HEIGHT * 0.4, // Smaller popup for offline mode
 //       useNativeDriver: false,
 //       tension: 50,
 //       friction: 8,
 //     }).start();
-
-//     // Fetch data after showing popup
-//     await fetchDictionaryData(cleanWord);
 //   };
 
 //   // Close popup
@@ -185,8 +117,6 @@
 //       setShowPopup(false);
 //       setSelectedWord(null);
 //       setHighlightedWordIndex(-1);
-//       setDictionaryData(null);
-//       setFilipinoTranslation("");
 //     });
 //   };
 
@@ -199,7 +129,7 @@
 //       },
 //       onPanResponderMove: (_, gestureState) => {
 //         if (gestureState.dy > 0) {
-//           slideAnim.setValue(SCREEN_HEIGHT * 0.25 + gestureState.dy); // Match the opening position
+//           slideAnim.setValue(SCREEN_HEIGHT * 0.4 + gestureState.dy);
 //         }
 //       },
 //       onPanResponderRelease: (_, gestureState) => {
@@ -207,7 +137,7 @@
 //           closePopup();
 //         } else {
 //           Animated.spring(slideAnim, {
-//             toValue: SCREEN_HEIGHT * 0.25, // Match the opening position
+//             toValue: SCREEN_HEIGHT * 0.4,
 //             useNativeDriver: false,
 //           }).start();
 //         }
@@ -236,6 +166,12 @@
 //         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
 //           <MaterialCommunityIcons name="arrow-left" size={29} color="#000" />
 //         </TouchableOpacity>
+
+//         {/* Offline Badge */}
+//         <View style={styles.offlineBadge}>
+//           <MaterialCommunityIcons name="wifi-off" size={16} color="#666" />
+//           <Text style={styles.offlineBadgeText}>Offline Mode</Text>
+//         </View>
         
 //         <TouchableOpacity
 //           onPress={() => setShowSettings(!showSettings)}
@@ -345,7 +281,23 @@
 //         </Text>
 //       </ScrollView>
 
-//       {/* Popup Modal */}
+//       {/* Read/Stop Button */}
+//       <View style={styles.readButtonContainer}>
+//         <TouchableOpacity
+//           style={[
+//             styles.readButton,
+//             isReading && styles.readButtonActive
+//           ]}
+//           onPress={toggleReadText}
+//           activeOpacity={0.8}
+//         >
+//           <Text style={styles.readButtonText}>
+//             {isReading ? "Stop" : "Read"}
+//           </Text>
+//         </TouchableOpacity>
+//       </View>
+
+//       {/* Offline Popup Modal - Simplified */}
 //       {showPopup && (
 //         <Modal transparent visible={showPopup} animationType="none">
 //           <TouchableOpacity
@@ -357,7 +309,7 @@
 //               style={[styles.popupContainer, { top: slideAnim }]}
 //               {...panResponder.panHandlers}
 //             >
-//               {/* Background Gradient Effect */}
+//               {/* Background */}
 //               <View style={styles.gradientBackground} />
               
 //               <TouchableOpacity activeOpacity={1} style={styles.popupContent}>
@@ -370,79 +322,60 @@
 //                   showsVerticalScrollIndicator={false}
 //                 >
 //                   {/* Title */}
-//                   <Text style={styles.popupTitle}>Definitions</Text>
+//                   <Text style={styles.popupTitle}>Word Pronunciation</Text>
 
-//                   {loading ? (
-//                     <View style={styles.loadingContainer}>
-//                       <ActivityIndicator size="large" color="#94D231" />
-//                       <Text style={styles.loadingText}>Loading...</Text>
-//                     </View>
-//                   ) : dictionaryData ? (
-//                     <>
-//                       {/* Word Card */}
-//                       <View style={styles.wordCard}>
-//                         <View style={styles.wordInfo}>
-//                           <Text style={styles.wordText}>
-//                             {selectedWord?.toUpperCase()}
-//                           </Text>
-//                           <Text style={styles.phoneticText}>
-//                             {dictionaryData.phonetic || 
-//                              dictionaryData.phonetics?.[0]?.text || 
-//                              "No pronunciation"}
-//                           </Text>
-//                         </View>
-//                         <TouchableOpacity
-//                           style={styles.soundButton}
-//                           onPress={playPronunciation}
-//                         >
-//                           <MaterialCommunityIcons
-//                             name="volume-high"
-//                             size={24}
-//                             color="#28242C"
-//                           />
-//                         </TouchableOpacity>
-//                       </View>
-
-//                       {/* Part of Speech */}
-//                       {dictionaryData.meanings?.[0]?.partOfSpeech && (
-//                         <Text style={styles.partOfSpeech}>
-//                           {dictionaryData.meanings[0].partOfSpeech}
-//                         </Text>
-//                       )}
-
-//                       {/* Definition */}
-//                       {dictionaryData.meanings?.[0]?.definitions?.[0]?.definition && (
-//                         <Text style={styles.definition}>
-//                           {dictionaryData.meanings[0].definitions[0].definition}
-//                         </Text>
-//                       )}
-
-//                       {/* Example (if available) */}
-//                       {dictionaryData.meanings?.[0]?.definitions?.[0]?.example && (
-//                         <View style={styles.exampleContainer}>
-//                           <Text style={styles.exampleLabel}>Example:</Text>
-//                           <Text style={styles.exampleText}>
-//                             "{dictionaryData.meanings[0].definitions[0].example}"
-//                           </Text>
-//                         </View>
-//                       )}
-
-//                       {/* Filipino Translation */}
-//                       <Text style={styles.kahuluganTitle}>Kahulugan</Text>
-//                       <Text style={styles.kahuluganText}>
-//                         {filipinoTranslation || "Loading translation..."}
+//                   {/* Word Card - Offline Version */}
+//                   <View style={styles.wordCard}>
+//                     <View style={styles.wordInfo}>
+//                       <Text style={styles.wordText}>
+//                         {selectedWord?.toUpperCase()}
 //                       </Text>
-//                     </>
-//                   ) : (
-//                     <View style={styles.noDataContainer}>
-//                       <Text style={styles.noDataText}>
-//                         No definition found for "{selectedWord}"
-//                       </Text>
-//                       <Text style={styles.noDataSubtext}>
-//                         Try selecting another word
+//                       <Text style={styles.offlineNote}>
+//                         Tap speaker to hear pronunciation
 //                       </Text>
 //                     </View>
-//                   )}
+//                     <TouchableOpacity
+//                       style={styles.soundButton}
+//                       onPress={playPronunciation}
+//                     >
+//                       <MaterialCommunityIcons
+//                         name="volume-high"
+//                         size={24}
+//                         color="#28242C"
+//                       />
+//                     </TouchableOpacity>
+//                   </View>
+
+//                   {/* Offline Notice */}
+//                   <View style={styles.offlineNotice}>
+//                     <MaterialCommunityIcons name="wifi-off" size={24} color="#FFF" />
+//                     <Text style={styles.offlineNoticeTitle}>Offline Mode</Text>
+//                     <Text style={styles.offlineNoticeText}>
+//                       Word definitions and translations are not available offline. 
+//                       Connect to the internet to access full dictionary features.
+//                     </Text>
+//                   </View>
+
+//                   {/* Available Features */}
+//                   <View style={styles.featuresContainer}>
+//                     <Text style={styles.featuresTitle}>Available Features:</Text>
+//                     <View style={styles.featureItem}>
+//                       <MaterialCommunityIcons name="check-circle" size={20} color="#94D231" />
+//                       <Text style={styles.featureText}>Text-to-speech pronunciation</Text>
+//                     </View>
+//                     <View style={styles.featureItem}>
+//                       <MaterialCommunityIcons name="check-circle" size={20} color="#94D231" />
+//                       <Text style={styles.featureText}>Read entire passage aloud</Text>
+//                     </View>
+//                     <View style={styles.featureItem}>
+//                       <MaterialCommunityIcons name="check-circle" size={20} color="#94D231" />
+//                       <Text style={styles.featureText}>Adjustable font size</Text>
+//                     </View>
+//                     <View style={styles.featureItem}>
+//                       <MaterialCommunityIcons name="check-circle" size={20} color="#94D231" />
+//                       <Text style={styles.featureText}>Voice gender selection</Text>
+//                     </View>
+//                   </View>
 //                 </ScrollView>
 //               </TouchableOpacity>
 //             </Animated.View>
@@ -468,6 +401,22 @@
 //   },
 //   backButton: {
 //     padding: 8,
+//   },
+//   offlineBadge: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     backgroundColor: "#FFF",
+//     paddingHorizontal: 12,
+//     paddingVertical: 6,
+//     borderRadius: 20,
+//     gap: 6,
+//     borderWidth: 1,
+//     borderColor: "#E0E0E0",
+//   },
+//   offlineBadgeText: {
+//     fontSize: 12,
+//     fontWeight: "600",
+//     color: "#666",
 //   },
 //   settingsButton: {
 //     padding: 8,
@@ -542,7 +491,7 @@
 //     marginTop: 10,
 //   },
 //   passageContent: {
-//     paddingBottom: isSmallScreen ? 30 : 40,
+//     paddingBottom: isSmallScreen ? 100 : 120,
 //   },
 //   passage: {
 //     fontFamily: "Poppins",
@@ -561,6 +510,37 @@
 //     borderRadius: 4,
 //     paddingHorizontal: 2,
 //   },
+//   readButtonContainer: {
+//     position: "absolute",
+//     bottom: isSmallScreen ? 30 : 40,
+//     left: 0,
+//     right: 0,
+//     alignItems: "center",
+//     zIndex: 10,
+//   },
+//   readButton: {
+//     width: isSmallScreen ? 110 : 132,
+//     height: isSmallScreen ? 50 : 57,
+//     backgroundColor: "#94D231",
+//     borderRadius: 70,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 4 },
+//     shadowOpacity: 0.25,
+//     shadowRadius: 4,
+//     elevation: 4,
+//   },
+//   readButtonActive: {
+//     backgroundColor: "#E62A2A",
+//   },
+//   readButtonText: {
+//     fontFamily: "Poppins",
+//     fontSize: responsiveFontSize(20),
+//     fontWeight: "700",
+//     color: "#FFF",
+//     lineHeight: responsiveFontSize(20),
+//   },
 //   modalOverlay: {
 //     flex: 1,
 //     backgroundColor: "rgba(0,0,0,0)",
@@ -568,7 +548,7 @@
 //   popupContainer: {
 //     position: "absolute",
 //     width: SCREEN_WIDTH,
-//     height: SCREEN_HEIGHT * 0.75,
+//     height: SCREEN_HEIGHT * 0.6,
 //     borderTopLeftRadius: isSmallScreen ? 40 : 60,
 //     borderTopRightRadius: isSmallScreen ? 40 : 60,
 //     paddingTop: 20,
@@ -637,11 +617,12 @@
 //     marginBottom: 4,
 //     flexShrink: 1,
 //   },
-//   phoneticText: {
+//   offlineNote: {
 //     fontFamily: "Poppins",
-//     fontSize: responsiveFontSize(16),
-//     fontWeight: "500",
+//     fontSize: responsiveFontSize(12),
+//     fontWeight: "400",
 //     color: "#FFF",
+//     opacity: 0.9,
 //     flexShrink: 1,
 //   },
 //   soundButton: {
@@ -658,35 +639,54 @@
 //     elevation: 4,
 //     marginLeft: 8,
 //   },
-//   partOfSpeech: {
+//   offlineNotice: {
+//     backgroundColor: "rgba(255, 255, 255, 0.1)",
+//     borderRadius: 12,
+//     padding: isSmallScreen ? 16 : 20,
+//     alignItems: "center",
+//     marginBottom: isSmallScreen ? 20 : 24,
+//   },
+//   offlineNoticeTitle: {
 //     fontFamily: "Poppins",
-//     fontSize: responsiveFontSize(20),
-//     fontWeight: "500",
+//     fontSize: responsiveFontSize(18),
+//     fontWeight: "600",
 //     color: "#FFF",
+//     marginTop: 8,
 //     marginBottom: 8,
 //   },
-//   definition: {
+//   offlineNoticeText: {
 //     fontFamily: "Poppins",
 //     fontSize: responsiveFontSize(14),
 //     fontWeight: "400",
 //     color: "#FFF",
+//     textAlign: "center",
 //     lineHeight: responsiveFontSize(20),
-//     marginBottom: isSmallScreen ? 16 : 20,
+//     opacity: 0.9,
 //   },
-//   kahuluganTitle: {
-//     fontFamily: "Poppins",
-//     fontSize: responsiveFontSize(20),
-//     fontWeight: "500",
-//     color: "#FFF",
-//     marginBottom: 8,
-//     marginTop: isSmallScreen ? 12 : 16,
+//   featuresContainer: {
+//     backgroundColor: "rgba(255, 255, 255, 0.1)",
+//     borderRadius: 12,
+//     padding: isSmallScreen ? 16 : 20,
 //   },
-//   kahuluganText: {
+//   featuresTitle: {
 //     fontFamily: "Poppins",
 //     fontSize: responsiveFontSize(16),
+//     fontWeight: "600",
+//     color: "#FFF",
+//     marginBottom: 12,
+//   },
+//   featureItem: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     marginBottom: 10,
+//     gap: 10,
+//   },
+//   featureText: {
+//     fontFamily: "Poppins",
+//     fontSize: responsiveFontSize(14),
 //     fontWeight: "400",
 //     color: "#FFF",
-//     marginBottom: isSmallScreen ? 20 : 30,
+//     flex: 1,
 //   },
 //   errorCard: {
 //     backgroundColor: "#FFF",
@@ -713,51 +713,6 @@
 //     color: "#FFF",
 //     fontSize: 16,
 //     fontWeight: "600",
-//   },
-//   noDataContainer: {
-//     alignItems: "center",
-//     justifyContent: "center",
-//     marginTop: isSmallScreen ? 40 : 50,
-//     paddingHorizontal: 20,
-//   },
-//   noDataText: {
-//     color: "#FFF",
-//     fontSize: responsiveFontSize(18),
-//     fontWeight: "600",
-//     textAlign: "center",
-//     marginBottom: 8,
-//   },
-//   noDataSubtext: {
-//     color: "#FFF",
-//     fontSize: responsiveFontSize(14),
-//     opacity: 0.7,
-//     textAlign: "center",
-//   },
-//   loadingContainer: {
-//     alignItems: "center",
-//     justifyContent: "center",
-//     marginTop: isSmallScreen ? 40 : 50,
-//   },
-//   loadingText: {
-//     color: "#FFF",
-//     fontSize: responsiveFontSize(16),
-//     marginTop: 12,
-//   },
-//   exampleContainer: {
-//     marginTop: isSmallScreen ? 8 : 12,
-//     marginBottom: isSmallScreen ? 16 : 20,
-//   },
-//   exampleLabel: {
-//     color: "#94D231",
-//     fontSize: responsiveFontSize(14),
-//     fontWeight: "600",
-//     marginBottom: 4,
-//   },
-//   exampleText: {
-//     color: "#FFF",
-//     fontSize: responsiveFontSize(14),
-//     fontStyle: "italic",
-//     lineHeight: responsiveFontSize(20),
 //   },
 //   voiceOptions: {
 //     flexDirection: "column",
@@ -789,22 +744,20 @@
 //   },
 // });
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
 import React, { useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Dimensions,
-  Modal,
-  PanResponder,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Animated,
+    Dimensions,
+    Modal,
+    PanResponder,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -818,33 +771,50 @@ const responsiveFontSize = (base: number) => {
   return base + 2;
 };
 
-type DictionaryData = {
-  word: string;
-  phonetic: string;
-  phonetics: Array<{ text?: string; audio?: string }>;
-  meanings: Array<{
-    partOfSpeech: string;
-    definitions: Array<{ definition: string; example?: string }>;
-  }>;
+// Story data mapping
+const STORY_DATA: Record<string, { title: string; passage: string }> = {
+  'Counting The Hours': {
+    title: 'Counting The Hours',
+    passage: "When men decided to divide the day into twenty four hours, they used numbers one through twelve two times. As a result, there was one oclock during the day and another one oclock after midnight."
+  },
+  'Telling Time': {
+    title: 'Telling Time',
+    passage: "Humans have used different objects to tell time. In the beginning, they used an hourglass. This is a cylindrical glass with a narrow center which allows sand to flow from its upper to its lower portion."
+  },
+  'Nose Bleeds': {
+    title: 'Nose Bleeds',
+    passage: "Having a nosebleed is a common occurrence. Children experience epistaxis when blood flows out from either or both nostrils, often for a short period of time. It may be caused by ones behavior like frequent nose picking or blowing too hard when one has a cold."
+  }
 };
 
-export default function VocabularySupport() {
-  const { title, passage } = useLocalSearchParams<{ title: string; passage: string }>();
+export default function OfflineVocabularySupport() {
+  const params = useLocalSearchParams<{ title?: string; passage?: string }>();
   const router = useRouter();
 
-  const storyTitle = title ? decodeURIComponent(String(title)) : "Story";
-  const storyText = passage ? decodeURIComponent(String(passage)) : "";
+  // Get story data from params or use the title to lookup from STORY_DATA
+  let storyTitle = "Story";
+  let storyText = "";
+
+  if (params.title) {
+    const decodedTitle = decodeURIComponent(String(params.title));
+    storyTitle = decodedTitle;
+    
+    // If passage is provided in params, use it
+    if (params.passage) {
+      storyText = decodeURIComponent(String(params.passage));
+    } 
+    // Otherwise, lookup from STORY_DATA
+    else if (STORY_DATA[decodedTitle]) {
+      storyText = STORY_DATA[decodedTitle].passage;
+    }
+  }
 
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [highlightedWordIndex, setHighlightedWordIndex] = useState<number>(-1);
   const [showPopup, setShowPopup] = useState(false);
-  const [dictionaryData, setDictionaryData] = useState<DictionaryData | null>(null);
-  const [filipinoTranslation, setFilipinoTranslation] = useState<string>("");
-  const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [fontSize, setFontSize] = useState(20);
   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isReading, setIsReading] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -875,85 +845,10 @@ export default function VocabularySupport() {
     }
   };
 
-  // Fetch dictionary data
-  const fetchDictionaryData = async (word: string) => {
-    setLoading(true);
-    console.log('🔍 Fetching data for word:', word);
-    
-    try {
-      // Fetch English definition
-      const dictResponse = await fetch(
-        `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`
-      );
-      
-      console.log('📖 Dictionary response status:', dictResponse.status);
-      
-      if (dictResponse.ok) {
-        const dictData: any = await dictResponse.json();
-        console.log('📖 Dictionary data:', JSON.stringify(dictData[0], null, 2));
-        setDictionaryData(dictData[0]);
-      } else {
-        console.log('❌ Dictionary API failed');
-        setDictionaryData(null);
-      }
+  // Play pronunciation for selected word (offline TTS only)
+  const playPronunciation = () => {
+    if (!selectedWord) return;
 
-      // Fetch Filipino translation
-      const translationResponse = await fetch(
-        `https://api.mymemory.translated.net/get?q=${word}&langpair=en|fil`
-      );
-      
-      console.log('🌏 Translation response status:', translationResponse.status);
-      
-      if (translationResponse.ok) {
-        const translationData: any = await translationResponse.json();
-        console.log('🌏 Translation data:', translationData);
-        const translation = translationData?.responseData?.translatedText || "Walang salin";
-        console.log('🌏 Final translation:', translation);
-        setFilipinoTranslation(translation);
-      } else {
-        console.log('❌ Translation API failed');
-        setFilipinoTranslation("Walang salin");
-      }
-    } catch (error) {
-      console.error("❌ Error fetching data:", error);
-      setDictionaryData(null);
-      setFilipinoTranslation("Walang salin");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Play pronunciation audio with TTS fallback
-  const playPronunciation = async () => {
-    if (!dictionaryData || !selectedWord) return;
-
-    // Try to use API audio first
-    const audioUrl = dictionaryData.phonetics.find((p) => p.audio)?.audio;
-    
-    if (audioUrl) {
-      try {
-        if (sound) {
-          await sound.unloadAsync();
-        }
-
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          { uri: audioUrl },
-          { shouldPlay: true }
-        );
-        setSound(newSound);
-
-        newSound.setOnPlaybackStatusUpdate((status) => {
-          if (status.isLoaded && status.didJustFinish) {
-            newSound.unloadAsync();
-          }
-        });
-        return;
-      } catch (error) {
-        console.error("Error playing API audio:", error);
-      }
-    }
-
-    // Fallback to Text-to-Speech with gender selection
     try {
       const voiceOptions = {
         language: 'en-US',
@@ -968,8 +863,8 @@ export default function VocabularySupport() {
     }
   };
 
-  // Handle word press with long press detection
-  const handleWordPress = async (word: string, index: number) => {
+  // Handle word press - offline mode shows basic info
+  const handleWordPress = (word: string, index: number) => {
     if (showPopup) return; // Prevent selecting while popup is open
 
     const cleanWord = word.replace(/[^a-zA-Z]/g, "").toLowerCase();
@@ -981,14 +876,11 @@ export default function VocabularySupport() {
 
     // Animate popup slide up
     Animated.spring(slideAnim, {
-      toValue: SCREEN_HEIGHT * 0.25, // Start higher for more content visibility
+      toValue: SCREEN_HEIGHT * 0.4, // Smaller popup for offline mode
       useNativeDriver: false,
       tension: 50,
       friction: 8,
     }).start();
-
-    // Fetch data after showing popup
-    await fetchDictionaryData(cleanWord);
   };
 
   // Close popup
@@ -1001,8 +893,6 @@ export default function VocabularySupport() {
       setShowPopup(false);
       setSelectedWord(null);
       setHighlightedWordIndex(-1);
-      setDictionaryData(null);
-      setFilipinoTranslation("");
     });
   };
 
@@ -1015,7 +905,7 @@ export default function VocabularySupport() {
       },
       onPanResponderMove: (_, gestureState) => {
         if (gestureState.dy > 0) {
-          slideAnim.setValue(SCREEN_HEIGHT * 0.25 + gestureState.dy); // Match the opening position
+          slideAnim.setValue(SCREEN_HEIGHT * 0.4 + gestureState.dy);
         }
       },
       onPanResponderRelease: (_, gestureState) => {
@@ -1023,7 +913,7 @@ export default function VocabularySupport() {
           closePopup();
         } else {
           Animated.spring(slideAnim, {
-            toValue: SCREEN_HEIGHT * 0.25, // Match the opening position
+            toValue: SCREEN_HEIGHT * 0.4,
             useNativeDriver: false,
           }).start();
         }
@@ -1037,6 +927,9 @@ export default function VocabularySupport() {
         <View style={styles.errorCard}>
           <Text style={styles.errorTitle}>No story content available</Text>
           <Text style={styles.errorText}>Title: {storyTitle}</Text>
+          <Text style={styles.errorText}>
+            Please navigate from a story screen to access vocabulary support.
+          </Text>
         </View>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Text style={styles.backBtnText}>Back</Text>
@@ -1052,6 +945,12 @@ export default function VocabularySupport() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons name="arrow-left" size={29} color="#000" />
         </TouchableOpacity>
+
+        {/* Offline Badge */}
+        <View style={styles.offlineBadge}>
+          <MaterialCommunityIcons name="wifi-off" size={16} color="#666" />
+          <Text style={styles.offlineBadgeText}>Offline Mode</Text>
+        </View>
         
         <TouchableOpacity
           onPress={() => setShowSettings(!showSettings)}
@@ -1145,6 +1044,7 @@ export default function VocabularySupport() {
         style={styles.passageContainer}
         contentContainerStyle={styles.passageContent}
       >
+        <Text style={styles.storyTitle}>{storyTitle}</Text>
         <Text style={[styles.passage, { fontSize }]}>
           {words.map((word, index) => (
             <Text
@@ -1177,7 +1077,7 @@ export default function VocabularySupport() {
         </TouchableOpacity>
       </View>
 
-      {/* Popup Modal */}
+      {/* Offline Popup Modal - Simplified */}
       {showPopup && (
         <Modal transparent visible={showPopup} animationType="none">
           <TouchableOpacity
@@ -1189,7 +1089,7 @@ export default function VocabularySupport() {
               style={[styles.popupContainer, { top: slideAnim }]}
               {...panResponder.panHandlers}
             >
-              {/* Background Gradient Effect */}
+              {/* Background */}
               <View style={styles.gradientBackground} />
               
               <TouchableOpacity activeOpacity={1} style={styles.popupContent}>
@@ -1202,79 +1102,60 @@ export default function VocabularySupport() {
                   showsVerticalScrollIndicator={false}
                 >
                   {/* Title */}
-                  <Text style={styles.popupTitle}>Definitions</Text>
+                  <Text style={styles.popupTitle}>Word Pronunciation</Text>
 
-                  {loading ? (
-                    <View style={styles.loadingContainer}>
-                      <ActivityIndicator size="large" color="#94D231" />
-                      <Text style={styles.loadingText}>Loading...</Text>
-                    </View>
-                  ) : dictionaryData ? (
-                    <>
-                      {/* Word Card */}
-                      <View style={styles.wordCard}>
-                        <View style={styles.wordInfo}>
-                          <Text style={styles.wordText}>
-                            {selectedWord?.toUpperCase()}
-                          </Text>
-                          <Text style={styles.phoneticText}>
-                            {dictionaryData.phonetic || 
-                             dictionaryData.phonetics?.[0]?.text || 
-                             "No pronunciation"}
-                          </Text>
-                        </View>
-                        <TouchableOpacity
-                          style={styles.soundButton}
-                          onPress={playPronunciation}
-                        >
-                          <MaterialCommunityIcons
-                            name="volume-high"
-                            size={24}
-                            color="#28242C"
-                          />
-                        </TouchableOpacity>
-                      </View>
-
-                      {/* Part of Speech */}
-                      {dictionaryData.meanings?.[0]?.partOfSpeech && (
-                        <Text style={styles.partOfSpeech}>
-                          {dictionaryData.meanings[0].partOfSpeech}
-                        </Text>
-                      )}
-
-                      {/* Definition */}
-                      {dictionaryData.meanings?.[0]?.definitions?.[0]?.definition && (
-                        <Text style={styles.definition}>
-                          {dictionaryData.meanings[0].definitions[0].definition}
-                        </Text>
-                      )}
-
-                      {/* Example (if available) */}
-                      {dictionaryData.meanings?.[0]?.definitions?.[0]?.example && (
-                        <View style={styles.exampleContainer}>
-                          <Text style={styles.exampleLabel}>Example:</Text>
-                          <Text style={styles.exampleText}>
-                            "{dictionaryData.meanings[0].definitions[0].example}"
-                          </Text>
-                        </View>
-                      )}
-
-                      {/* Filipino Translation */}
-                      <Text style={styles.kahuluganTitle}>Kahulugan</Text>
-                      <Text style={styles.kahuluganText}>
-                        {filipinoTranslation || "Loading translation..."}
+                  {/* Word Card - Offline Version */}
+                  <View style={styles.wordCard}>
+                    <View style={styles.wordInfo}>
+                      <Text style={styles.wordText}>
+                        {selectedWord?.toUpperCase()}
                       </Text>
-                    </>
-                  ) : (
-                    <View style={styles.noDataContainer}>
-                      <Text style={styles.noDataText}>
-                        No definition found for "{selectedWord}"
-                      </Text>
-                      <Text style={styles.noDataSubtext}>
-                        Try selecting another word
+                      <Text style={styles.offlineNote}>
+                        Tap speaker to hear pronunciation
                       </Text>
                     </View>
-                  )}
+                    <TouchableOpacity
+                      style={styles.soundButton}
+                      onPress={playPronunciation}
+                    >
+                      <MaterialCommunityIcons
+                        name="volume-high"
+                        size={24}
+                        color="#28242C"
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Offline Notice */}
+                  <View style={styles.offlineNotice}>
+                    <MaterialCommunityIcons name="wifi-off" size={24} color="#FFF" />
+                    <Text style={styles.offlineNoticeTitle}>Offline Mode</Text>
+                    <Text style={styles.offlineNoticeText}>
+                      Word definitions and translations are not available offline. 
+                      Connect to the internet to access full dictionary features.
+                    </Text>
+                  </View>
+
+                  {/* Available Features */}
+                  <View style={styles.featuresContainer}>
+                    <Text style={styles.featuresTitle}>Available Features:</Text>
+                    <View style={styles.featureItem}>
+                      <MaterialCommunityIcons name="check-circle" size={20} color="#94D231" />
+                      <Text style={styles.featureText}>Text-to-speech pronunciation</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <MaterialCommunityIcons name="check-circle" size={20} color="#94D231" />
+                      <Text style={styles.featureText}>Read entire passage aloud</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <MaterialCommunityIcons name="check-circle" size={20} color="#94D231" />
+                      <Text style={styles.featureText}>Adjustable font size</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <MaterialCommunityIcons name="check-circle" size={20} color="#94D231" />
+                      <Text style={styles.featureText}>Voice gender selection</Text>
+                    </View>
+                  </View>
                 </ScrollView>
               </TouchableOpacity>
             </Animated.View>
@@ -1300,6 +1181,22 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+  },
+  offlineBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  offlineBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#666",
   },
   settingsButton: {
     padding: 8,
@@ -1376,6 +1273,13 @@ const styles = StyleSheet.create({
   passageContent: {
     paddingBottom: isSmallScreen ? 100 : 120,
   },
+  storyTitle: {
+    fontSize: responsiveFontSize(22),
+    fontWeight: "700",
+    color: "#315E34",
+    marginBottom: 16,
+    textAlign: "center",
+  },
   passage: {
     fontFamily: "Poppins",
     fontWeight: "500",
@@ -1431,7 +1335,7 @@ const styles = StyleSheet.create({
   popupContainer: {
     position: "absolute",
     width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.75,
+    height: SCREEN_HEIGHT * 0.6,
     borderTopLeftRadius: isSmallScreen ? 40 : 60,
     borderTopRightRadius: isSmallScreen ? 40 : 60,
     paddingTop: 20,
@@ -1500,11 +1404,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     flexShrink: 1,
   },
-  phoneticText: {
+  offlineNote: {
     fontFamily: "Poppins",
-    fontSize: responsiveFontSize(16),
-    fontWeight: "500",
+    fontSize: responsiveFontSize(12),
+    fontWeight: "400",
     color: "#FFF",
+    opacity: 0.9,
     flexShrink: 1,
   },
   soundButton: {
@@ -1521,35 +1426,54 @@ const styles = StyleSheet.create({
     elevation: 4,
     marginLeft: 8,
   },
-  partOfSpeech: {
+  offlineNotice: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 12,
+    padding: isSmallScreen ? 16 : 20,
+    alignItems: "center",
+    marginBottom: isSmallScreen ? 20 : 24,
+  },
+  offlineNoticeTitle: {
     fontFamily: "Poppins",
-    fontSize: responsiveFontSize(20),
-    fontWeight: "500",
+    fontSize: responsiveFontSize(18),
+    fontWeight: "600",
     color: "#FFF",
+    marginTop: 8,
     marginBottom: 8,
   },
-  definition: {
+  offlineNoticeText: {
     fontFamily: "Poppins",
     fontSize: responsiveFontSize(14),
     fontWeight: "400",
     color: "#FFF",
+    textAlign: "center",
     lineHeight: responsiveFontSize(20),
-    marginBottom: isSmallScreen ? 16 : 20,
+    opacity: 0.9,
   },
-  kahuluganTitle: {
-    fontFamily: "Poppins",
-    fontSize: responsiveFontSize(20),
-    fontWeight: "500",
-    color: "#FFF",
-    marginBottom: 8,
-    marginTop: isSmallScreen ? 12 : 16,
+  featuresContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 12,
+    padding: isSmallScreen ? 16 : 20,
   },
-  kahuluganText: {
+  featuresTitle: {
     fontFamily: "Poppins",
     fontSize: responsiveFontSize(16),
+    fontWeight: "600",
+    color: "#FFF",
+    marginBottom: 12,
+  },
+  featureItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    gap: 10,
+  },
+  featureText: {
+    fontFamily: "Poppins",
+    fontSize: responsiveFontSize(14),
     fontWeight: "400",
     color: "#FFF",
-    marginBottom: isSmallScreen ? 20 : 30,
+    flex: 1,
   },
   errorCard: {
     backgroundColor: "#FFF",
@@ -1564,6 +1488,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "#666",
+    marginBottom: 8,
   },
   backBtn: {
     backgroundColor: "#2196F3",
@@ -1576,51 +1501,6 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 16,
     fontWeight: "600",
-  },
-  noDataContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: isSmallScreen ? 40 : 50,
-    paddingHorizontal: 20,
-  },
-  noDataText: {
-    color: "#FFF",
-    fontSize: responsiveFontSize(18),
-    fontWeight: "600",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  noDataSubtext: {
-    color: "#FFF",
-    fontSize: responsiveFontSize(14),
-    opacity: 0.7,
-    textAlign: "center",
-  },
-  loadingContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: isSmallScreen ? 40 : 50,
-  },
-  loadingText: {
-    color: "#FFF",
-    fontSize: responsiveFontSize(16),
-    marginTop: 12,
-  },
-  exampleContainer: {
-    marginTop: isSmallScreen ? 8 : 12,
-    marginBottom: isSmallScreen ? 16 : 20,
-  },
-  exampleLabel: {
-    color: "#94D231",
-    fontSize: responsiveFontSize(14),
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  exampleText: {
-    color: "#FFF",
-    fontSize: responsiveFontSize(14),
-    fontStyle: "italic",
-    lineHeight: responsiveFontSize(20),
   },
   voiceOptions: {
     flexDirection: "column",

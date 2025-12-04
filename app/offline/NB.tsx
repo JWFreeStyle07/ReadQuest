@@ -1,4 +1,4 @@
-import { Picker } from '@react-native-picker/picker';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { decode as atob, encode as btoa } from 'base-64';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -7,13 +7,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Dimensions,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
-import { referenceTexts } from './referenceTexts';
+import { auth } from '../../firebase/firebaseConfig';
+import { saveStoryPronunciationResult } from '../../firebase/userService';
 
 type ProcessedResult = {
   accuracyScore: number;
@@ -41,7 +43,10 @@ type WordHighlight = {
   duration: number;
 };
 
-const ExpoPronunciationApp = () => {
+// Telling Time Story Text
+const NOSE_BLEEDS_TEXT = "Having a nosebleed is a common occurrence. Children experience epistaxis when blood flows out from either or both nostrils, often for a short period of time. It may be caused by ones behavior like frequent nose picking or blowing too hard when one has a cold.";
+
+const CountingTheHoursApp = () => {
   const router = useRouter();
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -50,7 +55,6 @@ const ExpoPronunciationApp = () => {
   const [pronunciationResult, setPronunciationResult] = useState<ProcessedResult | null>(null);
   const [readerLevel, setReaderLevel] = useState('');
   const [permissionResponse, requestPermission] = Audio.usePermissions();
-  const [selectedIndex, setSelectedIndex] = useState(0);
   
   // Playback states
   const [sound, setSound] = useState<Audio.Sound | null>(null);
@@ -65,7 +69,7 @@ const ExpoPronunciationApp = () => {
   const AZURE_REGION = 'eastus';
   const AZURE_ENDPOINT = `https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1`;
 
-  const REFERENCE_TEXT = referenceTexts[selectedIndex].text;
+  const REFERENCE_TEXT = NOSE_BLEEDS_TEXT;
 
   useEffect(() => {
     if (permissionResponse?.status !== 'granted') {
@@ -82,18 +86,6 @@ const ExpoPronunciationApp = () => {
       }
     };
   }, []);
-
-  // Reset when passage changes
-  useEffect(() => {
-    setAudioUri(null);
-    setPronunciationResult(null);
-    setWordsWithTimestamps([]);
-    setHighlightedWordIndex(-1);
-    if (sound) {
-      sound.unloadAsync();
-      setSound(null);
-    }
-  }, [selectedIndex]);
 
   const recordingOptions = Audio.RecordingOptionsPresets.HIGH_QUALITY;
 
@@ -157,6 +149,33 @@ const ExpoPronunciationApp = () => {
     }
   };
 
+  // Save to Firebase (with offline mode support)
+  const saveResultToFirebase = async (pronunciationScore: number, readerLevel: string) => {
+    try {
+      const currentUser = auth.currentUser;
+      
+      // Check if user is logged in - if not, skip saving silently
+      if (!currentUser) {
+        console.log('ℹ️ Offline mode: Results not saved (no user logged in)');
+        return; // Exit gracefully without showing error
+      }
+
+      // User is logged in, proceed with saving
+      await saveStoryPronunciationResult(
+        currentUser.uid,
+        'Counting The Hours',
+        pronunciationScore,
+        readerLevel
+      );
+
+      console.log('✅ Results saved to Firebase successfully');
+    } catch (error) {
+      console.error('❌ Error saving to Firebase:', error);
+      // Don't show alert in offline mode, just log the error
+      console.log('ℹ️ Results could not be saved, but analysis is complete');
+    }
+  };
+
   // Analyze pronunciation with word timestamps
   const analyzePronunciation = async () => {
     if (!audioUri) {
@@ -177,11 +196,10 @@ const ExpoPronunciationApp = () => {
         bytes[i] = binaryString.charCodeAt(i);
       }
 
-      // Request word-level timestamps
       const pronunciationConfig = {
         ReferenceText: REFERENCE_TEXT,
         GradingSystem: 'HundredMark',
-        Granularity: 'Word', // Changed to Word for better timestamps
+        Granularity: 'Word',
         Dimension: 'Comprehensive',
       };
 
@@ -245,14 +263,19 @@ const ExpoPronunciationApp = () => {
 
       console.log('Processed Result:', processedResult);
       setPronunciationResult(processedResult);
-      determineReaderLevel(processedResult.pronunciationScore);
+      
+      const determinedLevel = determineReaderLevel(processedResult.pronunciationScore);
+      setReaderLevel(determinedLevel);
+
+      // Attempt to save to Firebase (will handle offline mode gracefully)
+      saveResultToFirebase(processedResult.pronunciationScore, determinedLevel);
 
       // Extract words with timestamps for playback highlighting
       if (processedResult.words.length > 0) {
         const wordsWithTime = processedResult.words.map((word: any, index: number) => ({
           word: word.word,
           index,
-          offset: word.offset / 10000, // Convert from 100-nanosecond units to milliseconds
+          offset: word.offset / 10000,
           duration: word.duration / 10000,
         }));
         setWordsWithTimestamps(wordsWithTime);
@@ -263,13 +286,13 @@ const ExpoPronunciationApp = () => {
     }
   };
 
-  const determineReaderLevel = (score: any) => {
-    if (score >= 51) { //orig: 80
-      setReaderLevel('Proficient Reader');
-    } else if (score >= 30) { //orig: 60
-      setReaderLevel('Emerging Reader');
+  const determineReaderLevel = (score: number): string => {
+    if (score >= 55) {
+      return 'Proficient Reader';
+    } else if (score >= 30) {
+      return 'Emerging Reader';
     } else {
-      setReaderLevel('Beginner Reader');
+      return 'Beginner Reader';
     }
   };
 
@@ -286,7 +309,6 @@ const ExpoPronunciationApp = () => {
     console.log('🎬 Words with timestamps:', wordsWithTimestamps.length);
 
     try {
-      // Stop any existing playback
       if (sound) {
         console.log('🛑 Stopping existing sound...');
         await sound.stopAsync();
@@ -294,7 +316,6 @@ const ExpoPronunciationApp = () => {
         setSound(null);
       }
 
-      // Set audio mode for playback
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: true,
@@ -303,7 +324,6 @@ const ExpoPronunciationApp = () => {
 
       console.log('📁 Loading audio from:', audioUri);
 
-      // Load the audio
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: audioUri },
         { shouldPlay: true },
@@ -321,13 +341,11 @@ const ExpoPronunciationApp = () => {
       setHighlightedWordIndex(-1);
       playbackStartTimeRef.current = Date.now();
 
-      // IMPORTANT: Pass the sound object directly
       setTimeout(() => {
         console.log('🎯 Starting highlight sync after delay...');
         startHighlightSync(newSound);
       }, 100);
 
-      // Handle playback completion
       newSound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
           console.log('🏁 Playback finished');
@@ -356,14 +374,8 @@ const ExpoPronunciationApp = () => {
     console.log('🎵 Starting highlight sync...');
     console.log('🎵 Total words to highlight:', wordsWithTimestamps.length);
 
-    // Different sync strategies - change the value to try each one!
-    // Options: 'OFFSET', 'PROPORTIONAL', 'PROPORTIONAL_SMART', 'WORD_DURATION'
-    const SYNC_STRATEGY = 'PROPORTIONAL_SMART' as string;
-    const SYNC_OFFSET = 450; // Only used for 'OFFSET' strategy
-    
-    // Fine-tuning parameters for PROPORTIONAL_SMART
-    const SMART_LEAD_TIME = 150; // ms - how early to highlight before word is spoken
-    const SMART_SMOOTHING = 0.7; // 0-1 - how much to trust Azure timestamps (0=ignore, 1=trust fully)
+    const SYNC_STRATEGY = 'PROPORTIONAL' as string;
+    const SYNC_OFFSET = 0;
 
     playbackIntervalRef.current = setInterval(async () => {
       if (!soundObject) {
@@ -380,56 +392,23 @@ const ExpoPronunciationApp = () => {
           
           let adjustedPosition = currentPosition;
 
-          // Strategy 1: Simple offset (what we had before)
           if (SYNC_STRATEGY === 'OFFSET') {
             adjustedPosition = currentPosition + SYNC_OFFSET;
           }
           
-          // Strategy 2: Proportional scaling based on total duration
           else if (SYNC_STRATEGY === 'PROPORTIONAL') {
-            // Calculate progress through audio (0 to 1)
             const audioProgress = currentPosition / totalDuration;
             
-            // Get timestamp range from Azure
             const firstWordOffset = wordsWithTimestamps[0]?.offset || 0;
             const lastWordOffset = wordsWithTimestamps[wordsWithTimestamps.length - 1]?.offset || totalDuration;
             const timestampRange = lastWordOffset - firstWordOffset;
             
-            // Map audio position to timestamp range
             adjustedPosition = firstWordOffset + (audioProgress * timestampRange);
             
             console.log(`⏱️ Audio: ${currentPosition}ms | Progress: ${(audioProgress * 100).toFixed(1)}% | Adjusted: ${adjustedPosition.toFixed(0)}ms`);
           }
           
-          // Strategy 2.5: PROPORTIONAL_SMART - Adaptive timing with word duration awareness
-          else if (SYNC_STRATEGY === 'PROPORTIONAL_SMART') {
-            const audioProgress = currentPosition / totalDuration;
-            
-            // Get timestamp range from Azure
-            const firstWordOffset = wordsWithTimestamps[0]?.offset || 0;
-            const lastWordOffset = wordsWithTimestamps[wordsWithTimestamps.length - 1]?.offset || totalDuration;
-            const timestampRange = lastWordOffset - firstWordOffset;
-            
-            // Proportional position based on timestamps
-            const proportionalPosition = firstWordOffset + (audioProgress * timestampRange);
-            
-            // Equal distribution position (ignores timestamps)
-            const equalPosition = audioProgress * totalDuration;
-            
-            // Blend between proportional and equal based on SMART_SMOOTHING
-            // SMART_SMOOTHING = 1.0 means trust Azure fully
-            // SMART_SMOOTHING = 0.0 means ignore Azure and use equal distribution
-            const blendedPosition = (proportionalPosition * SMART_SMOOTHING) + (equalPosition * (1 - SMART_SMOOTHING));
-            
-            // Apply lead time (highlight slightly before the word is spoken)
-            adjustedPosition = blendedPosition - SMART_LEAD_TIME;
-            
-            console.log(`⏱️ Audio: ${currentPosition}ms | Prop: ${proportionalPosition.toFixed(0)}ms | Equal: ${equalPosition.toFixed(0)}ms | Blended: ${blendedPosition.toFixed(0)}ms | Final: ${adjustedPosition.toFixed(0)}ms`);
-          }
-          
-          // Strategy 3: Word duration based (best for longer pauses)
           else if (SYNC_STRATEGY === 'WORD_DURATION') {
-            // Calculate which word we SHOULD be on based on audio progress
             const audioProgress = currentPosition / totalDuration;
             const estimatedWordIndex = Math.floor(audioProgress * wordsWithTimestamps.length);
             
@@ -438,10 +417,9 @@ const ExpoPronunciationApp = () => {
               console.log(`🎯 Setting highlighted index to: ${estimatedWordIndex} (word: "${wordsWithTimestamps[estimatedWordIndex].word}")`);
               setHighlightedWordIndex(estimatedWordIndex);
             }
-            return; // Skip normal timestamp matching
+            return;
           }
 
-          // Find which word should be highlighted based on adjusted position
           const currentWordIndex = wordsWithTimestamps.findIndex((word: any, index: number) => {
             const nextWord = wordsWithTimestamps[index + 1];
             
@@ -470,7 +448,7 @@ const ExpoPronunciationApp = () => {
       } catch (error) {
         console.error('❌ Error syncing highlight:', error);
       }
-    }, 100); // Check every 100ms
+    }, 100);
   };
 
   // Stop playback
@@ -491,9 +469,9 @@ const ExpoPronunciationApp = () => {
   };
 
   const getScoreColor = (score: any) => {
-    if (score >= 51) return '#4CAF50'; //orig 80
-    if (score >= 30) return '#FF9800'; //orig 60
-    return '#F44336';
+    if (score >= 55) return '#4CAF50';
+    if (score >= 30) return '#FF9800';
+    if (score >= 0) return '#F44336';
   };
 
   const getLevelColor = (level: any) => {
@@ -525,11 +503,9 @@ const ExpoPronunciationApp = () => {
   // Render highlighted text
   const renderHighlightedText = () => {
     if (wordsWithTimestamps.length === 0) {
-      // Show reference text normally
       return <Text style={styles.referenceText}>{REFERENCE_TEXT}</Text>;
     }
 
-    // Show text with highlighting during playback
     return (
       <Text style={styles.referenceText}>
         {wordsWithTimestamps.map((wordObj, index) => (
@@ -550,25 +526,23 @@ const ExpoPronunciationApp = () => {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Header with back button and options */}
       <View style={styles.header}>
-        <Text style={styles.title}>Pronunciation Assessment</Text>
-        <Text style={styles.subtitle}>Read the text below clearly:</Text>
-      </View>
-
-      <View style={{ marginHorizontal: 20, marginTop: 10 }}>
-        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>Select Passage:</Text>
-        <Picker
-          selectedValue={selectedIndex}
-          onValueChange={(itemValue) => setSelectedIndex(itemValue)}
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
         >
-          {referenceTexts.map((item, idx) => (
-            <Picker.Item key={idx} label={item.title} value={idx} />
-          ))}
-        </Picker>
+          <MaterialCommunityIcons name="arrow-left" size={29} color="black" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.optionsButton}>
+          <MaterialCommunityIcons name="dots-horizontal" size={24} color="black" />
+        </TouchableOpacity>
       </View>
 
       {/* Text with highlighting */}
       <View style={styles.textContainer}>
+        <Text style={styles.storyTitle}>Nose Bleeds</Text>
         {renderHighlightedText()}
       </View>
 
@@ -602,7 +576,7 @@ const ExpoPronunciationApp = () => {
           </TouchableOpacity>
         )}
 
-        {/* Watch Playback Button (NEW!) */}
+        {/* Watch Playback Button */}
         {pronunciationResult && wordsWithTimestamps.length > 0 && !isRecording && (
           <>
             {!isPlaying ? (
@@ -625,10 +599,13 @@ const ExpoPronunciationApp = () => {
 
         {/* Vocabulary Support */}
         <TouchableOpacity
-          style={[styles.button, styles.vocabButton]}
-          onPress={() => router.push('../../vocabSupport/vocabSupport')}
+        style={[styles.button, styles.vocabButton]}
+        onPress={() => router.push({
+            pathname: '../offline/offlineVocab',
+            params: { title: 'Nose Bleeds' }
+        })}
         >
-          <Text style={styles.buttonText}>📚 Vocabulary Support</Text>
+        <Text style={styles.buttonText}>📚 Vocabulary Support</Text>
         </TouchableOpacity>
       </View>
 
@@ -706,6 +683,8 @@ const ExpoPronunciationApp = () => {
   );
 };
 
+const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -732,21 +711,19 @@ const styles = StyleSheet.create({
     borderRadius: 25,
   },
   header: {
-    padding: 20,
-    paddingTop: 50,
-    backgroundColor: '#2196F3',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingTop: 38,
+    paddingHorizontal: 22,
+    paddingBottom: 20,
+    backgroundColor: '#f5f5f5',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 8,
+  backButton: {
+    padding: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    color: 'white',
-    opacity: 0.9,
+  optionsButton: {
+    padding: 8,
   },
   textContainer: {
     margin: 20,
@@ -759,6 +736,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
+  storyTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#2196F3',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
   referenceText: {
     fontSize: 18,
     color: '#333',
@@ -770,7 +754,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   highlightedWord: {
-    backgroundColor: '#00FFFF', // Cyan color
+    backgroundColor: '#04ff00ff',
     fontWeight: 'bold',
     color: '#000',
     paddingHorizontal: 4,
@@ -778,7 +762,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   passedWord: {
-    color: '#BDBDBD', // Light gray for passed words
+    color: '#BDBDBD',
     opacity: 0.6,
   },
   controlsContainer: {
@@ -928,4 +912,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ExpoPronunciationApp;
+export default CountingTheHoursApp;
