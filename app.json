@@ -2,7 +2,7 @@
   "expo": {
     "name": "ReadQuest",
     "slug": "ReadQuest",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/login/ReadQuest.png",
     "scheme": "readquest",
@@ -27,7 +27,8 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.jadeaerron.readquest"
+      "package": "com.jadeaerron.readquest",
+      "versionCode": 2
     },
     "web": {
       "bundler": "metro",
