@@ -2993,30 +2993,40 @@ const StoryPronunciation = () => {
   };
 
   // Save to Firebase
-  const saveResultToFirebase = async (pronunciationScore: number, readerLevel: string) => {
-    try {
-      const currentUser = auth.currentUser;
-      
-      if (!currentUser) {
-        console.error('No user is currently logged in');
-        Alert.alert('Error', 'You must be logged in to save results');
-        return;
-      }
-
-      await saveStoryPronunciationResult(
-        currentUser.uid,
-        storyTitle,
-        pronunciationScore,
-        readerLevel
-      );
-
-      console.log('✅ Results saved to Firebase successfully');
-    } catch (error) {
-      console.error('❌ Error saving to Firebase:', error);
-      Alert.alert('Error', 'Failed to save results to database');
+  const saveResultToFirebase = async (
+  pronunciationScore: number, 
+  readerLevel: string,
+  accuracyScore: number,
+  fluencyScore: number,
+  completenessScore: number,
+  miscues: number
+) => {
+  try {
+    const currentUser = auth.currentUser;
+    
+    if (!currentUser) {
+      console.error('No user is currently logged in');
+      Alert.alert('Error', 'You must be logged in to save results');
+      return;
     }
-  };
 
+    await saveStoryPronunciationResult(
+      currentUser.uid,
+      storyTitle,
+      pronunciationScore,
+      readerLevel,
+      accuracyScore,
+      fluencyScore,
+      completenessScore,
+      miscues
+    );
+
+    console.log('✅ Results saved to Firebase successfully');
+  } catch (error) {
+    console.error('❌ Error saving to Firebase:', error);
+    Alert.alert('Error', 'Failed to save results to database');
+  }
+};
   // FIXED: Analyze pronunciation with corrected configuration
   const analyzePronunciation = async () => {
     if (!audioUri) {
@@ -3128,12 +3138,26 @@ const StoryPronunciation = () => {
 
       console.log('Processed Result:', processedResult);
       setPronunciationResult(processedResult);
-      
+
       const determinedLevel = determineReaderLevel(processedResult.pronunciationScore);
       setReaderLevel(determinedLevel);
 
+      // Count miscues (mispronounced words)
+      const miscuesCount = processedResult.words.filter(
+        (word: any) => word.errorType === 'Mispronunciation'
+      ).length;
+
+      console.log('Miscues count:', miscuesCount);
+
       // Save to Firebase after determining scores
-      saveResultToFirebase(processedResult.pronunciationScore, determinedLevel);
+      saveResultToFirebase(
+        processedResult.pronunciationScore,
+        determinedLevel,
+        processedResult.accuracyScore,
+        processedResult.fluencyScore,
+        processedResult.completenessScore,
+        miscuesCount
+      );
 
       // Extract words with timestamps for playback highlighting
       if (processedResult.words.length > 0) {

@@ -3,16 +3,16 @@
 // import { collection, getDocs, query, where } from "firebase/firestore";
 // import React, { useEffect, useState } from "react";
 // import {
-//     ActivityIndicator,
-//     Animated,
-//     Dimensions,
-//     Modal,
-//     ScrollView,
-//     StyleSheet,
-//     Text,
-//     TextInput,
-//     TouchableOpacity,
-//     View,
+//   ActivityIndicator,
+//   Animated,
+//   Dimensions,
+//   Modal,
+//   ScrollView,
+//   StyleSheet,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   View,
 // } from "react-native";
 // import { db } from "../../firebase/firebaseConfig";
 
@@ -389,7 +389,7 @@
 
 //       <TouchableOpacity
 //         style={styles.menuItem}
-//         onPress={() => navigateTo("../../teacher/addNewMaterial")}
+//         onPress={() => navigateTo("../../teacher/quizManagement")}
 //       >
 //         <MaterialCommunityIcons
 //           name="checkbox-multiple-marked-outline"
@@ -745,9 +745,10 @@ const TeacherDashboard = () => {
 
   const grades = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6"];
   const filters = [
-    "Below 60% (Needs Attention)",
-    "60–79% (Developing)",
-    "80% above (Proficient)",
+    "Name",
+    "Reading +",
+    "Reading -",
+    "Reader Level",
   ];
 
   // Fetch students from Firebase
@@ -781,62 +782,91 @@ const TeacherDashboard = () => {
 
     fetchStudents();
   }, []);
-// Calculate average score
+
+  // Calculate average score
   const getAverageScore = (scores: number[]) => {
     if (!scores || scores.length === 0) return 0;
     return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
   };
 
-//Calculate Statistics
+  //Calculate Statistics
   const totalLearners = students.length;
 
-// Count students with average reading score below 30%
-const learnersNeedingIntervention = students.filter((s) => {
-  const avgScore = getAverageScore(s.scores);
-  return avgScore < 30;
-}).length;
-
-  
+  // Count students with average reading score below 30%
+  const learnersNeedingIntervention = students.filter((s) => {
+    const avgScore = getAverageScore(s.scores);
+    return avgScore < 30;
+  }).length;
 
   const calculateOverallAverageScore = () => {
-  if (students.length === 0) return 0;
-  
-  let totalAverageSum = 0;
-  let studentsWithScores = 0;
-  
-  students.forEach((student) => {
-    if (student.scores && student.scores.length > 0) {
-      const studentAverage = student.scores.reduce((a, b) => a + b, 0) / student.scores.length;
-      totalAverageSum += studentAverage;
-      studentsWithScores++;
-    }
-  });
-  
-  if (studentsWithScores === 0) return 0;
-  
-  return Math.round(totalAverageSum / studentsWithScores);
-};
+    if (students.length === 0) return 0;
+    
+    let totalAverageSum = 0;
+    let studentsWithScores = 0;
+    
+    students.forEach((student) => {
+      if (student.scores && student.scores.length > 0) {
+        const studentAverage = student.scores.reduce((a, b) => a + b, 0) / student.scores.length;
+        totalAverageSum += studentAverage;
+        studentsWithScores++;
+      }
+    });
+    
+    if (studentsWithScores === 0) return 0;
+    
+    return Math.round(totalAverageSum / studentsWithScores);
+  };
 
-const averageReadingScore = calculateOverallAverageScore();
+  const averageReadingScore = calculateOverallAverageScore();
 
-  // Filter students based on search and filter
+  // Filter and sort students based on search and filter
   useEffect(() => {
-    let result = students;
+    let result = [...students];
 
-    if (searchText) {
-      result = result.filter((s) =>
-        s.username.toLowerCase().includes(searchText.toLowerCase())
-      );
+    // Search functionality - now works for name, reading percent, and reader level
+    if (searchText && !filters.includes(searchText)) {
+      result = result.filter((s) => {
+        const searchLower = searchText.toLowerCase();
+        const avgScore = getAverageScore(s.scores);
+        
+        // Check if search matches name
+        const matchesName = s.username.toLowerCase().includes(searchLower);
+        
+        // Check if search matches reading percent (e.g., "85" or "85%")
+        const matchesReading = avgScore.toString().includes(searchText) || 
+                               `${avgScore}%`.includes(searchText);
+        
+        // Check if search matches reader level
+        const matchesReaderLevel = s.readerType.toLowerCase().includes(searchLower);
+        
+        return matchesName || matchesReading || matchesReaderLevel;
+      });
     }
 
+    // Sorting based on selected filter
     if (selectedFilter) {
-      result = result.filter((s) => {
-        const avg = getAverageScore(s.scores);
-        if (selectedFilter.includes("Below 60%")) return avg < 60;
-        if (selectedFilter.includes("60–79%")) return avg >= 60 && avg < 80;
-        if (selectedFilter.includes("80%")) return avg >= 80;
-        return true;
-      });
+      if (selectedFilter === "Name") {
+        // Sort alphabetically by name (A-Z)
+        result.sort((a, b) => a.username.localeCompare(b.username));
+      } else if (selectedFilter === "Reading +") {
+        // Sort by reading score ascending (lowest to highest)
+        result.sort((a, b) => getAverageScore(a.scores) - getAverageScore(b.scores));
+      } else if (selectedFilter === "Reading -") {
+        // Sort by reading score descending (highest to lowest)
+        result.sort((a, b) => getAverageScore(b.scores) - getAverageScore(a.scores));
+      } else if (selectedFilter === "Reader Level") {
+        // Sort by reader level (Beginner -> Emerging -> Proficient)
+        const levelOrder: { [key: string]: number } = {
+          "Beginner": 1,
+          "Emerging": 2,
+          "Proficient": 3,
+        };
+        result.sort((a, b) => {
+          const orderA = levelOrder[a.readerType] || 999;
+          const orderB = levelOrder[b.readerType] || 999;
+          return orderA - orderB;
+        });
+      }
     }
 
     setFilteredStudents(result);
@@ -862,7 +892,6 @@ const averageReadingScore = calculateOverallAverageScore();
 
   const handleFilterSelect = (filter: string) => {
     setSelectedFilter(filter);
-    setSearchText(filter);
     setShowFilterDropdown(false);
   };
 
@@ -968,8 +997,8 @@ const averageReadingScore = calculateOverallAverageScore();
         />
         <TouchableOpacity onPress={() => setShowFilterDropdown(!showFilterDropdown)}>
           <MaterialCommunityIcons
-            name="chevron-down"
-            size={width * 0.05}
+            name="filter-menu-outline"
+            size={width * 0.055}
             color="#00000087"
           />
         </TouchableOpacity>
@@ -991,144 +1020,143 @@ const averageReadingScore = calculateOverallAverageScore();
       )}
 
       {/* Data Table */}
-      {/* Data Table */}
-<View style={[
-  styles.tableContainer,
-  {
-    height: Math.min(
-      height * 0.45,
-      height * 0.06 + (filteredStudents.length > 0 ? filteredStudents.length * height * 0.05 : height * 0.08)
-    ),
-  }
-]}>
-  {/* Table Header */}
-  <View style={styles.tableHeader}>
-    <Text style={[styles.columnHeader, { flex: 2 }]}>Name</Text>
-    <Text style={[styles.columnHeader, { flex: 1 }]}>Reading</Text>
-    <Text style={[styles.columnHeader, { flex: 1.5 }]}>Reader Level</Text>
-    <Text style={[styles.columnHeader, { flex: 1.5 }]}>View Progress</Text>
-  </View>
+      <View style={[
+        styles.tableContainer,
+        {
+          height: Math.min(
+            height * 0.45,
+            height * 0.06 + (filteredStudents.length > 0 ? filteredStudents.length * height * 0.05 : height * 0.08)
+          ),
+        }
+      ]}>
+        {/* Table Header */}
+        <View style={styles.tableHeader}>
+          <Text style={[styles.columnHeader, { flex: 2 }]}>Name</Text>
+          <Text style={[styles.columnHeader, { flex: 1 }]}>Reading</Text>
+          <Text style={[styles.columnHeader, { flex: 1.5 }]}>Reader Level</Text>
+          <Text style={[styles.columnHeader, { flex: 1.5 }]}>View Progress</Text>
+        </View>
 
-  {/* Table Data */}
-  <ScrollView 
-    style={styles.tableBody} 
-    showsVerticalScrollIndicator={false}
-    nestedScrollEnabled={true}
-  >
-    {filteredStudents.map((student) => (
-      <View key={student.id} style={styles.tableRow}>
-        <Text style={[styles.cellText, { flex: 2 }]} numberOfLines={1}>
-          {student.username}
-        </Text>
-        <Text style={[styles.cellText, { flex: 1 }]}>
-          {getAverageScore(student.scores)}%
-        </Text>
-        <Text style={[styles.cellText, { flex: 1.5 }]} numberOfLines={1}>
-          {student.readerType}
-        </Text>
-        <TouchableOpacity
-          style={styles.viewButton}
-          onPress={() => router.push(`/teacher/studentAnalytics?id=${student.id}` as any)}
+        {/* Table Data */}
+        <ScrollView 
+          style={styles.tableBody} 
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={true}
         >
-          <Text style={styles.viewButtonText}>View Progress</Text>
-        </TouchableOpacity>
+          {filteredStudents.map((student) => (
+            <View key={student.id} style={styles.tableRow}>
+              <Text style={[styles.cellText, { flex: 2 }]} numberOfLines={1}>
+                {student.username}
+              </Text>
+              <Text style={[styles.cellText, { flex: 1 }]}>
+                {getAverageScore(student.scores)}%
+              </Text>
+              <Text style={[styles.cellText, { flex: 1.5 }]} numberOfLines={1}>
+                {student.readerType}
+              </Text>
+              <TouchableOpacity
+                style={styles.viewButton}
+                onPress={() => router.push(`/teacher/studentAnalytics?id=${student.id}` as any)}
+              >
+                <Text style={styles.viewButtonText}>View Progress</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+          {filteredStudents.length === 0 && (
+            <View style={styles.noDataContainer}>
+              <Text style={styles.noDataText}>No students found</Text>
+            </View>
+          )}
+        </ScrollView>
       </View>
-    ))}
-    {filteredStudents.length === 0 && (
-      <View style={styles.noDataContainer}>
-        <Text style={styles.noDataText}>No students found</Text>
-      </View>
-    )}
-  </ScrollView>
-</View>
 
       {/* Side Menu Modal */}
-<Modal
-  visible={sideMenuVisible}
-  transparent
-  animationType="none"
-  onRequestClose={closeSideMenu}
->
-  <TouchableOpacity
-    style={styles.modalOverlay}
-    activeOpacity={1}
-    onPress={closeSideMenu}
-  >
-    <Animated.View style={[styles.sideMenu, { left: slideAnim }]}>
-  <View style={styles.sideMenuContent}>
-    {/* Menu Header */}
-    <Text style={styles.menuTitle}>ReadQuest</Text>
-    <View style={styles.menuDivider} />
-
-    {/* Top Menu Items */}
-    <View style={styles.topMenuItems}>
-      <TouchableOpacity style={styles.menuItem} onPress={closeSideMenu}>
-        <MaterialCommunityIcons
-          name="file-table-box-multiple"
-          size={18}
-          color="#000"
-        />
-        <Text style={styles.menuItemText}>Dashboard</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => navigateTo("../../teacher/learnerProgress")}
+      <Modal
+        visible={sideMenuVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeSideMenu}
       >
-        <MaterialCommunityIcons name="progress-check" size={18} color="#000" />
-        <Text style={styles.menuItemText}>Progress Tracking</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={closeSideMenu}
+        >
+          <Animated.View style={[styles.sideMenu, { left: slideAnim }]}>
+            <View style={styles.sideMenuContent}>
+              {/* Menu Header */}
+              <Text style={styles.menuTitle}>ReadQuest</Text>
+              <View style={styles.menuDivider} />
 
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => navigateTo("../../teacher/readingMaterials")}
-      >
-        <MaterialCommunityIcons
-          name="book-open-blank-variant"
-          size={20}
-          color="#000"
-        />
-        <Text style={styles.menuItemText}>Reading Materials</Text>
-      </TouchableOpacity>
+              {/* Top Menu Items */}
+              <View style={styles.topMenuItems}>
+                <TouchableOpacity style={styles.menuItem} onPress={closeSideMenu}>
+                  <MaterialCommunityIcons
+                    name="file-table-box-multiple"
+                    size={18}
+                    color="#000"
+                  />
+                  <Text style={styles.menuItemText}>Dashboard</Text>
+                </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => navigateTo("../../teacher/quizManagement")}
-      >
-        <MaterialCommunityIcons
-          name="checkbox-multiple-marked-outline"
-          size={24}
-          color="#000"
-        />
-        <Text style={styles.menuItemText}>Quiz Management</Text>
-      </TouchableOpacity>
-    </View>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => navigateTo("../../teacher/learnerProgress")}
+                >
+                  <MaterialCommunityIcons name="progress-check" size={18} color="#000" />
+                  <Text style={styles.menuItemText}>Progress Tracking</Text>
+                </TouchableOpacity>
 
-    {/* Bottom Section - Account, Settings & Green Footer */}
-    <View style={styles.bottomSection}>
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => navigateTo("../../teacher/teacherAccount")}
-      >
-        <MaterialCommunityIcons name="account-circle" size={28} color="#000" />
-        <Text style={styles.menuItemText}>Account</Text>
-      </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => navigateTo("../../teacher/readingMaterials")}
+                >
+                  <MaterialCommunityIcons
+                    name="book-open-blank-variant"
+                    size={20}
+                    color="#000"
+                  />
+                  <Text style={styles.menuItemText}>Reading Materials</Text>
+                </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => navigateTo("../../teacher/settings")}
-      >
-        <MaterialCommunityIcons name="cog-outline" size={31} color="#000" />
-        <Text style={styles.menuItemText}>Settings</Text>
-      </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => navigateTo("../../teacher/quizManagement")}
+                >
+                  <MaterialCommunityIcons
+                    name="checkbox-multiple-marked-outline"
+                    size={24}
+                    color="#000"
+                  />
+                  <Text style={styles.menuItemText}>Quiz Management</Text>
+                </TouchableOpacity>
+              </View>
 
-      {/* Green Footer */}
-      <View style={styles.menuFooter} />
-    </View>
-  </View>
-</Animated.View>
-  </TouchableOpacity>
-</Modal>
+              {/* Bottom Section - Account, Settings & Green Footer */}
+              <View style={styles.bottomSection}>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => navigateTo("../../teacher/teacherAccount")}
+                >
+                  <MaterialCommunityIcons name="account-circle" size={28} color="#000" />
+                  <Text style={styles.menuItemText}>Account</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => navigateTo("../../teacher/settings")}
+                >
+                  <MaterialCommunityIcons name="cog-outline" size={31} color="#000" />
+                  <Text style={styles.menuItemText}>Settings</Text>
+                </TouchableOpacity>
+
+                {/* Green Footer */}
+                <View style={styles.menuFooter} />
+              </View>
+            </View>
+          </Animated.View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -1203,12 +1231,12 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   statsContainer: {
-  flexDirection: "row",
-  justifyContent: "center",
-  paddingHorizontal: width * 0.04,
-  marginTop: height * 0.03,
-  gap: 0,
-},
+    flexDirection: "row",
+    justifyContent: "center",
+    paddingHorizontal: width * 0.04,
+    marginTop: height * 0.03,
+    gap: 0,
+  },
   statBox: {
     width: width * 0.29,
     height: height * 0.2,
@@ -1281,14 +1309,14 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   tableContainer: {
-  marginHorizontal: width * 0.05,
-  marginTop: height * 0.015,
-  marginBottom: height * 0.02,
-  backgroundColor: "#41765D",
-  borderRadius: 10,
-  padding: width * 0.03,
-  maxHeight: height * 0.45,
-},
+    marginHorizontal: width * 0.05,
+    marginTop: height * 0.015,
+    marginBottom: height * 0.02,
+    backgroundColor: "#41765D",
+    borderRadius: 10,
+    padding: width * 0.03,
+    maxHeight: height * 0.45,
+  },
   tableHeader: {
     flexDirection: "row",
     paddingBottom: height * 0.015,
@@ -1303,9 +1331,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   tableBody: {
-  marginTop: height * 0.01,
-},
-    tableRow: {
+    marginTop: height * 0.01,
+  },
+  tableRow: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
@@ -1314,13 +1342,13 @@ const styles = StyleSheet.create({
     paddingVertical: height * 0.01,
     paddingHorizontal: width * 0.02,
   },
-    cellText: {
+  cellText: {
     fontFamily: "Poppins",
     fontWeight: "500",
     fontSize: width * 0.025,
     color: "#000000",
     textAlign: "center",
-    },
+  },
   viewButton: {
     flex: 1.5,
     backgroundColor: "#94D231",
@@ -1355,27 +1383,27 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.3)",
   },
   sideMenu: {
-  position: "absolute",
-  top: 0,
-  width: 240,
-  height: "100%",
-  backgroundColor: "#FFFFFF",
-},
-sideMenuContent: {
-  flex: 1,
-  justifyContent: "space-between",
-},
-topMenuItems: {
-  marginTop: height * 0.02,
-},
-bottomSection: {
-  marginTop: "auto",
-},
-menuFooter: {
-  width: 240,
-  height: 68,
-  backgroundColor: "#41765D",
-},
+    position: "absolute",
+    top: 0,
+    width: 240,
+    height: "100%",
+    backgroundColor: "#FFFFFF",
+  },
+  sideMenuContent: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  topMenuItems: {
+    marginTop: height * 0.02,
+  },
+  bottomSection: {
+    marginTop: "auto",
+  },
+  menuFooter: {
+    width: 240,
+    height: 68,
+    backgroundColor: "#41765D",
+  },
   menuTitle: {
     fontFamily: "Poppins",
     fontWeight: "700",
