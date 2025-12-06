@@ -102,15 +102,21 @@ const LoginScreen = () => {
     } catch (error: any) {
       setLoading(false);
       
-      if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
+      // Handle specific Firebase error codes
+      if (error.code === "auth/invalid-credential" || 
+          error.code === "auth/user-not-found" || 
+          error.code === "auth/wrong-password") {
         Alert.alert("Login Failed", "Invalid username or password. Please try again.");
       } else if (error.code === "auth/too-many-requests") {
         Alert.alert("Too Many Attempts", "Too many failed login attempts. Please try again later.");
+      } else if (error.code === "auth/invalid-email") {
+        Alert.alert("Invalid Input", "Please enter a valid username.");
       } else {
-        Alert.alert("Login Failed", error.message || "An error occurred. Please try again.");
+        // For any other errors, show a generic message
+        Alert.alert("Login Failed", "Unable to log in. Please check your credentials and try again.");
       }
       
-      console.error("Login Error:", error);
+      // Don't log errors to avoid terminal clutter
     }
   };
 
