@@ -254,7 +254,8 @@ const StudentDashboard = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header Section */}
         <View style={styles.header}>
-          <View style={styles.profileContainer}>
+          <TouchableOpacity onPress={() => router.push("../../student/studentAccount" as any)}>
+            <View style={styles.profileContainer}>
             <View style={styles.profileCircle}>
               <Image
                 source={require("../../assets/images/welcome/circleBg.png")}
@@ -268,6 +269,7 @@ const StudentDashboard = () => {
               resizeMode="contain"
             />
           </View>
+          </TouchableOpacity>
 
           <View style={styles.greetingContainer}>
             <Text style={styles.helloText}>Hello!</Text>

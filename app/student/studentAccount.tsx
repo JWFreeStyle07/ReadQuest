@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
@@ -18,7 +19,7 @@ import { auth, db } from "../../firebase/firebaseConfig";
 
 const { width, height } = Dimensions.get("window");
 
-const TeacherAccount = () => {
+const StudentAccount = () => {
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [originalDisplayName, setOriginalDisplayName] = useState("");
@@ -40,13 +41,12 @@ const TeacherAccount = () => {
         if (userSnap.exists()) {
           const userData = userSnap.data();
           
-          // Get display name (what teacher sees and can edit)
+          // Get display name (what student sees and can edit)
           const name = userData.displayName || userData.username || userData.name || "";
           setDisplayName(name);
           setOriginalDisplayName(name);
           
           // Get login username (used for authentication, cannot be changed)
-          // This is the original username used during sign up
           const loginName = userData.loginUsername || userData.username || userData.name || "";
           setLoginUsername(loginName);
         }
@@ -184,18 +184,26 @@ const TeacherAccount = () => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#41765D" />
+      <LinearGradient
+        colors={["#0d4949", "#315e35"]}
+        locations={[0.1538, 0.5913]}
+        style={styles.loadingContainer}
+      >
+        <ActivityIndicator size="large" color="#94D231" />
         <Text style={styles.loadingText}>Loading Account...</Text>
-      </View>
+      </LinearGradient>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={["#0d4949", "#315e35"]}
+      locations={[0.1538, 0.5913]}
+      style={styles.container}
+    >
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-        <MaterialCommunityIcons name="arrow-left" size={width * 0.08} color="#000000" />
+        <MaterialCommunityIcons name="arrow-left" size={width * 0.08} color="#FFFFFF" />
       </TouchableOpacity>
 
       {/* Save Button */}
@@ -205,7 +213,7 @@ const TeacherAccount = () => {
         disabled={saving}
       >
         {saving ? (
-          <ActivityIndicator size="small" color="#000000" />
+          <ActivityIndicator size="small" color="#FFFFFF" />
         ) : (
           <Text style={styles.saveButtonText}>Save</Text>
         )}
@@ -227,7 +235,7 @@ const TeacherAccount = () => {
         value={displayName}
         onChangeText={setDisplayName}
         placeholder="Enter your display name"
-        placeholderTextColor="#00000080"
+        placeholderTextColor="#ffffff80"
       />
 
       {/* Login Username Info (Read-only) */}
@@ -264,26 +272,24 @@ const TeacherAccount = () => {
         />
         <Text style={styles.deleteButtonText}>Delete account</Text>
       </TouchableOpacity>
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
   },
   loadingText: {
     marginTop: 10,
     fontFamily: "Poppins",
     fontSize: 16,
-    color: "#41765D",
+    color: "#94D231",
   },
   backButton: {
     position: "absolute",
@@ -304,19 +310,20 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
     fontWeight: "700",
     fontSize: width * 0.04,
-    color: "#000000",
+    color: "#FFFFFF",
   },
   imageContainer: {
     width: width * 0.35,
     height: width * 0.36,
     borderRadius: (width * 0.35) / 2,
     borderWidth: 3,
-    borderColor: "#98c74b",
+    borderColor: "#94D231",
     alignSelf: "center",
     marginTop: height * 0.11,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
+    backgroundColor: "rgba(148, 210, 49, 0.2)",
   },
   profileImage: {
     width: "100%",
@@ -329,7 +336,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
     fontWeight: "500",
     fontSize: width * 0.033,
-    color: "#000000",
+    color: "#FFFFFF",
   },
   input: {
     position: "absolute",
@@ -337,13 +344,15 @@ const styles = StyleSheet.create({
     height: height * 0.065,
     left: width * 0.06,
     top: height * 0.37,
-    backgroundColor: "#9FE62DCF",
+    backgroundColor: "rgba(148, 210, 49, 0.3)",
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#94D231",
     paddingHorizontal: width * 0.05,
     fontFamily: "Poppins",
     fontWeight: "500",
     fontSize: width * 0.04,
-    color: "#000000",
+    color: "#FFFFFF",
   },
   loginLabel: {
     position: "absolute",
@@ -352,7 +361,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
     fontWeight: "500",
     fontSize: width * 0.028,
-    color: "#666666",
+    color: "#CCCCCC",
   },
   loginUsernameContainer: {
     position: "absolute",
@@ -360,8 +369,10 @@ const styles = StyleSheet.create({
     height: height * 0.055,
     left: width * 0.06,
     top: height * 0.475,
-    backgroundColor: "#E8E8E8",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(148, 210, 49, 0.5)",
     paddingHorizontal: width * 0.05,
     justifyContent: "center",
   },
@@ -369,7 +380,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
     fontWeight: "500",
     fontSize: width * 0.04,
-    color: "#666666",
+    color: "#CCCCCC",
   },
   accountLabel: {
     position: "absolute",
@@ -378,7 +389,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
     fontWeight: "500",
     fontSize: width * 0.033,
-    color: "#000000",
+    color: "#FFFFFF",
   },
   switchButton: {
     position: "absolute",
@@ -421,4 +432,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TeacherAccount;
+export default StudentAccount;
