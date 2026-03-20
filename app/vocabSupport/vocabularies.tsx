@@ -1,4 +1,4 @@
-// vocabularies.ts
+
 export type VocabEntry = {
   definition: string;
   translation: string;
@@ -6,10 +6,6 @@ export type VocabEntry = {
 
 export type StoryVocab = Record<string, VocabEntry>;
 
-/**
- * Use string keys (lowercase) for the inner vocab so lookups against
- * cleaned/tolowercased words succeed.
- */
 export const vocabularies: Record<string, StoryVocab> = {
   "For Testing Only": {
     all: { definition: "Everything; the whole.", translation: "lahat" },
